@@ -65,7 +65,7 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: MAIL_FROM
-        value: "Pipelines <onboarding@resend.dev>"
+        value: "Pipelines <naoresponda@notificacoes.perezimoveis.com>"
       - key: IMOVIEW_BASE_URL
         sync: false
       - key: IMOVIEW_API_KEY
