@@ -3,8 +3,12 @@ import crypto from 'node:crypto';
 import { signAccessToken } from '../config/jwt';
 import { env } from '../config/env';
 import { RefreshTokenModel } from '../models/refreshToken.model';
+import { PasswordResetTokenModel } from '../models/passwordResetToken.model';
 import { UserModel } from '../models/user.model';
 import { AppError } from '../utils/AppError';
+import { MailService } from './mail.service';
+
+const RESET_TOKEN_EXPIRES_IN_MS = 60 * 60 * 1000; // 1h
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -77,5 +81,34 @@ export const AuthService = {
     const password_hash = await bcrypt.hash(newPassword, 12);
     await UserModel.updatePassword(userId, password_hash);
     await RefreshTokenModel.revokeAllForUser(userId);
+  },
+
+  async requestPasswordReset(email: string) {
+    const user = await UserModel.findByEmail(email);
+    // Não revela se o e-mail existe ou não: a resposta é sempre "sucesso" pra quem chama.
+    if (!user || !user.active) {
+      return;
+    }
+
+    await PasswordResetTokenModel.invalidateAllForUser(user.id);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRES_IN_MS);
+    await PasswordResetTokenModel.create(user.id, hashToken(token), expiresAt);
+
+    const resetUrl = `${env.frontendUrl}/reset-password/${token}`;
+    await MailService.sendPasswordReset(user.email, resetUrl);
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    const record = await PasswordResetTokenModel.findValidByHash(hashToken(token));
+    if (!record) {
+      throw new AppError('Link de redefinição inválido ou expirado', 400);
+    }
+
+    const password_hash = await bcrypt.hash(newPassword, 12);
+    await UserModel.updatePassword(record.user_id, password_hash);
+    await PasswordResetTokenModel.markUsed(record.id);
+    await RefreshTokenModel.revokeAllForUser(record.user_id);
   },
 };

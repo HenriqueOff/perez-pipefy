@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/authenticate';
 import { validateBody } from '../middlewares/validate';
-import { changePasswordSchema, loginSchema } from '../validators/auth.schema';
+import { forgotPasswordRateLimit } from '../middlewares/forgotPasswordRateLimit';
+import { changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema } from '../validators/auth.schema';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
@@ -16,6 +17,17 @@ router.post(
   authenticate,
   validateBody(changePasswordSchema),
   asyncHandler(AuthController.changePassword)
+);
+router.post(
+  '/forgot-password',
+  forgotPasswordRateLimit,
+  validateBody(forgotPasswordSchema),
+  asyncHandler(AuthController.forgotPassword)
+);
+router.post(
+  '/reset-password',
+  validateBody(resetPasswordSchema),
+  asyncHandler(AuthController.resetPassword)
 );
 
 export default router;

@@ -32,4 +32,11 @@ export const env = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET ?? 'attachments',
+  // E-mail de "esqueci minha senha" via Resend. Sem RESEND_API_KEY configurada, o pedido
+  // de redefinição falha ao tentar enviar (não trava o resto do app, igual ao Supabase).
+  resendApiKey: process.env.RESEND_API_KEY,
+  mailFrom: process.env.MAIL_FROM ?? 'Pipelines <onboarding@resend.dev>',
+  // URL do frontend usada pra montar o link de redefinição de senha. Sem FRONTEND_URL
+  // definida, reaproveita o CORS_ORIGIN (na prática sempre a mesma URL nesta app).
+  frontendUrl: process.env.FRONTEND_URL ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173',
 };

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -43,6 +43,9 @@ export default function LoginPage() {
         <button type="submit" disabled={submitting}>
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
+        <p className="back-link">
+          <Link to="/forgot-password">Esqueceu a senha?</Link>
+        </p>
       </form>
     </div>
   );

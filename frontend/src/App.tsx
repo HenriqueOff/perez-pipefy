@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import PipelinesPage from './pages/PipelinesPage';
 import PipelineBoardPage from './pages/PipelineBoardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -25,6 +27,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/forms/:token" element={<PublicFormPage />} />
       <Route
         path="/"

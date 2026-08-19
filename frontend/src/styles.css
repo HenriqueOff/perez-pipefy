@@ -168,6 +168,16 @@ textarea:focus {
   font-size: 13px;
 }
 
+.success {
+  color: var(--color-success);
+  font-size: 13px;
+}
+
+.login-card .back-link {
+  text-align: center;
+  font-size: 13px;
+}
+
 /* ---------- Shell / sidebar nav ---------- */
 
 .app-shell {

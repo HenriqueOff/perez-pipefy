@@ -63,4 +63,16 @@ export const AuthController = {
     await AuthService.changePassword(req.user!.id, currentPassword, newPassword);
     res.status(204).send();
   },
+
+  async forgotPassword(req: Request, res: Response) {
+    const { email } = req.body;
+    await AuthService.requestPasswordReset(email);
+    res.status(204).send();
+  },
+
+  async resetPassword(req: Request, res: Response) {
+    const { token, newPassword } = req.body;
+    await AuthService.resetPassword(token, newPassword);
+    res.status(204).send();
+  },
 };
