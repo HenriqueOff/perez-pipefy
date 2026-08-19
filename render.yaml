@@ -10,13 +10,18 @@ services:
   - type: web
     name: pipelines-backend
     runtime: node
-    rootDir: backend
+    # Sem rootDir de propósito: builda a partir da raiz do monorepo usando os
+    # comandos "--workspace backend" (mesmo jeito que rodamos localmente e no
+    # docker-compose). Um "npm install" isolado dentro de backend/ (com
+    # rootDir: backend) não enxerga o workspace do monorepo e deixa de
+    # instalar parte das devDependencies (@types/*, supertest), quebrando o
+    # "npm run build" (tsc) mesmo com as dependencies de runtime presentes.
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build --workspace backend
     # roda a migration e o seed do admin a cada boot: são idempotentes (seed só
     # cria o usuário se ainda não existir) e o plano gratuito do Render não dá
     # acesso a um console/shell pra rodar isso manualmente depois do deploy.
-    startCommand: npm run migrate && npm run seed && npm start
+    startCommand: npm run migrate --workspace backend && npm run seed --workspace backend && npm start --workspace backend
     envVars:
       - key: NODE_ENV
         value: production
