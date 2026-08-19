@@ -17,7 +17,10 @@ services:
     # instalar parte das devDependencies (@types/*, supertest), quebrando o
     # "npm run build" (tsc) mesmo com as dependencies de runtime presentes.
     plan: free
-    buildCommand: node -v; npm -v; pwd; ls -la; cat package.json; npm install --loglevel info && npm run build --workspace backend
+    # --include=dev é necessário porque NODE_ENV=production (env var do
+    # serviço) também vale durante o build, e isso faz o "npm install" omitir
+    # devDependencies por padrão — sem elas o @types/* some e o "tsc" quebra.
+    buildCommand: npm install --include=dev && npm run build --workspace backend
     # roda a migration e o seed do admin a cada boot: são idempotentes (seed só
     # cria o usuário se ainda não existir) e o plano gratuito do Render não dá
     # acesso a um console/shell pra rodar isso manualmente depois do deploy.
