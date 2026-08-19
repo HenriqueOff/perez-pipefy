@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+uploads/
+*.tsbuildinfo
+
+# Config local de máquina - contorna o cmd.exe quebrando com o "&" do caminho
+# desta pasta (OneDrive "PEREZ & FILHO"). Não deve ser versionado nem ir para
+# o servidor/CI, onde o caminho não tem esse problema.
+.npmrc
+
+# Preferências locais do Claude Code (por máquina, não compartilhado no repo)
+.claude/settings.local.json

@@ -1,0 +1,104 @@
+import request from 'supertest';
+import { createApp } from '../../src/app';
+import { db } from '../../src/config/db';
+
+const app = createApp();
+
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@perezimoveis.com';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
+
+describe('fluxo completo de pipeline', () => {
+  let accessToken: string;
+  let pipelineId: number;
+  let phase1Id: number;
+  let phase2Id: number;
+  let fieldId: number;
+  let cardId: number;
+
+  afterAll(async () => {
+    await db.destroy();
+  });
+
+  it('faz login com o admin seedado', async () => {
+    const res = await request(app).post('/api/v1/auth/login').send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toBeDefined();
+    accessToken = res.body.accessToken;
+  });
+
+  it('cria um pipeline', async () => {
+    const res = await request(app)
+      .post('/api/v1/pipelines')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Captação de imóveis - teste' });
+    expect(res.status).toBe(201);
+    pipelineId = res.body.id;
+  });
+
+  it('cria duas fases', async () => {
+    const res1 = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/phases`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Novo', is_initial: true });
+    expect(res1.status).toBe(201);
+    phase1Id = res1.body.id;
+
+    const res2 = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/phases`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ name: 'Em análise' });
+    expect(res2.status).toBe(201);
+    phase2Id = res2.body.id;
+  });
+
+  it('cria um campo customizado obrigatório na fase inicial', async () => {
+    const res = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/phases/${phase1Id}/fields`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ label: 'Endereço', key: 'endereco', type: 'text', required: true });
+    expect(res.status).toBe(201);
+    fieldId = res.body.id;
+  });
+
+  it('cria um card na fase inicial', async () => {
+    const res = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/cards`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ title: 'Imóvel Rua das Flores, 123' });
+    expect(res.status).toBe(201);
+    cardId = res.body.id;
+    expect(res.body.current_phase_id).toBe(phase1Id);
+  });
+
+  it('impede mover o card sem preencher o campo obrigatório', async () => {
+    const res = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/cards/${cardId}/move`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ to_phase_id: phase2Id });
+    expect(res.status).toBe(422);
+  });
+
+  it('preenche o campo obrigatório e move o card', async () => {
+    const fieldsRes = await request(app)
+      .patch(`/api/v1/pipelines/${pipelineId}/cards/${cardId}/fields`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ fields: { endereco: 'Rua das Flores, 123' } });
+    expect(fieldsRes.status).toBe(200);
+
+    const moveRes = await request(app)
+      .post(`/api/v1/pipelines/${pipelineId}/cards/${cardId}/move`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ to_phase_id: phase2Id });
+    expect(moveRes.status).toBe(200);
+    expect(moveRes.body.current_phase_id).toBe(phase2Id);
+  });
+
+  it('registra o histórico do card (created, field_updated, moved)', async () => {
+    const res = await request(app)
+      .get(`/api/v1/pipelines/${pipelineId}/cards/${cardId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(200);
+    const eventTypes = res.body.history.map((h: { event_type: string }) => h.event_type);
+    expect(eventTypes).toEqual(expect.arrayContaining(['created', 'field_updated', 'moved']));
+  });
+});

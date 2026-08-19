@@ -1,0 +1,19 @@
+{
+  "name": "perez-filho-pipelines",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "migrate": "npm run migrate --workspace backend",
+    "migrate:rollback": "npm run migrate:rollback --workspace backend",
+    "seed": "npm run seed --workspace backend",
+    "test": "npm run test --workspace backend",
+    "lint": "npm run lint --workspace backend"
+  }
+}

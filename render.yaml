@@ -1,0 +1,75 @@
+# Blueprint do Render para este monorepo (backend Node/Express + frontend React
+# estático). Suba este arquivo em "New +" → "Blueprint" no painel do Render.
+#
+# Depois do primeiro deploy dos dois serviços, você vai precisar voltar aqui e
+# preencher, à mão, no painel (aba Environment de cada serviço), as variáveis
+# marcadas "preencher depois do primeiro deploy" abaixo — elas dependem da URL
+# que o Render gera para o outro serviço, então não dá pra saber antes de os
+# dois existirem.
+services:
+  - type: web
+    name: pipelines-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    # roda a migration e o seed do admin a cada boot: são idempotentes (seed só
+    # cria o usuário se ainda não existir) e o plano gratuito do Render não dá
+    # acesso a um console/shell pra rodar isso manualmente depois do deploy.
+    startCommand: npm run migrate && npm run seed && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      # credenciais do usuário admin criado pelo seed no primeiro boot
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      # Connection string do Postgres gerenciado (Supabase/Neon/etc.) — cole no painel.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 1h
+      - key: JWT_REFRESH_EXPIRES_IN_DAYS
+        value: "7"
+      - key: CREDENTIALS_ENCRYPTION_KEY
+        generateValue: true
+      # URL do frontend (preencher depois do primeiro deploy) — ex.: https://pipelines-frontend.onrender.com
+      - key: CORS_ORIGIN
+        sync: false
+      - key: COOKIE_CROSS_SITE
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: attachments
+      - key: IMOVIEW_BASE_URL
+        sync: false
+      - key: IMOVIEW_API_KEY
+        sync: false
+
+  - type: web
+    name: pipelines-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # URL do backend (preencher depois do primeiro deploy) — ex.: https://pipelines-backend.onrender.com/api/v1
+      - key: VITE_API_BASE_URL
+        sync: false
+    routes:
+      # SPA com rotas no client (React Router): qualquer caminho cai no index.html.
+      - type: rewrite
+        source: /*
+        destination: /index.html
