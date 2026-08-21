@@ -1,6 +1,8 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import AuthLayout from '../components/AuthLayout';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>();
@@ -35,14 +37,13 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="centered">
-      <form className="login-card" onSubmit={handleSubmit}>
+    <AuthLayout>
+      <form className="auth-form" onSubmit={handleSubmit}>
         <h1>Nova senha</h1>
         <p className="subtitle">Escolha uma nova senha pra sua conta.</p>
         <label>
           Nova senha
-          <input
-            type="password"
+          <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             minLength={8}
@@ -52,8 +53,7 @@ export default function ResetPasswordPage() {
         </label>
         <label>
           Confirmar nova senha
-          <input
-            type="password"
+          <PasswordInput
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -62,12 +62,13 @@ export default function ResetPasswordPage() {
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={submitting}>
+          {submitting && <span className="button-spinner" aria-hidden="true" />}
           {submitting ? 'Salvando...' : 'Salvar nova senha'}
         </button>
         <p className="back-link">
           <Link to="/login">Voltar pro login</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

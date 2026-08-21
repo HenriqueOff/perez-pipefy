@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import AuthLayout from '../components/AuthLayout';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -23,8 +24,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="centered">
-      <form className="login-card" onSubmit={handleSubmit}>
+    <AuthLayout>
+      <form className="auth-form" onSubmit={handleSubmit}>
         <h1>Esqueceu a senha?</h1>
         <p className="subtitle">Informe seu e-mail e enviaremos um link pra redefinir a senha.</p>
         {sent ? (
@@ -39,6 +40,7 @@ export default function ForgotPasswordPage() {
             </label>
             {error && <p className="error">{error}</p>}
             <button type="submit" disabled={submitting}>
+              {submitting && <span className="button-spinner" aria-hidden="true" />}
               {submitting ? 'Enviando...' : 'Enviar link de redefinição'}
             </button>
           </>
@@ -47,6 +49,6 @@ export default function ForgotPasswordPage() {
           <Link to="/login">Voltar pro login</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

@@ -178,6 +178,147 @@ textarea:focus {
   font-size: 13px;
 }
 
+/* ---------- Auth shell (login / esqueci senha / nova senha) ---------- */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.auth-brand-panel {
+  flex: 0 0 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: linear-gradient(155deg, var(--color-primary) 0%, #2f2591 100%);
+  color: white;
+}
+
+.auth-brand-content {
+  max-width: 360px;
+}
+
+.auth-brand-name {
+  display: block;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.auth-brand-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.02em;
+}
+
+.auth-brand-tagline {
+  margin: 24px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--color-bg);
+}
+
+.auth-form-content {
+  width: 100%;
+  max-width: 360px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-form h1 {
+  margin: 0;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+}
+
+.password-input-wrap input {
+  width: 100%;
+  padding-right: 36px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+}
+
+.button-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: auth-spin 0.6s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 780px) {
+  .auth-shell {
+    flex-direction: column;
+  }
+
+  .auth-brand-panel {
+    flex: none;
+    padding: 32px 24px;
+  }
+
+  .auth-brand-tagline {
+    display: none;
+  }
+
+  .auth-form-panel {
+    padding: 32px 24px 48px;
+  }
+}
+
 /* ---------- Shell / sidebar nav ---------- */
 
 .app-shell {

@@ -1,6 +1,8 @@
 import { FormEvent, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import AuthLayout from '../components/AuthLayout';
+import PasswordInput from '../components/PasswordInput';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -27,26 +29,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="centered">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Pipelines</h1>
-        <p className="subtitle">PEREZ &amp; FILHO</p>
+    <AuthLayout>
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <h1>Entrar</h1>
+        <p className="subtitle">Acesse sua conta pra continuar</p>
         <label>
           E-mail
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </label>
         <label>
           Senha
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={submitting}>
+          {submitting && <span className="button-spinner" aria-hidden="true" />}
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
         <p className="back-link">
           <Link to="/forgot-password">Esqueceu a senha?</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
