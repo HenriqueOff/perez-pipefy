@@ -16,6 +16,29 @@ export const CardModel = {
     return db<CardRow>(TABLE).where({ current_phase_id: phaseId }).count<{ count: string }[]>('id as count').first();
   },
 
+  /**
+   * Contagens por pipeline pra tela inicial: total, atrasados (due_date passado) e SLA
+   * estourado (mesma regra de notification.service.ts: sla_override_hours ?? phases.sla_hours).
+   */
+  aggregateStatsByPipelines(pipelineIds: number[]) {
+    if (pipelineIds.length === 0) return Promise.resolve([]);
+    return db(TABLE)
+      .join('phases', 'phases.id', `${TABLE}.current_phase_id`)
+      .whereIn(`${TABLE}.pipeline_id`, pipelineIds)
+      .groupBy(`${TABLE}.pipeline_id`)
+      .select<{ pipeline_id: number; total: number; overdue: number; sla_breached: number }[]>(
+        `${TABLE}.pipeline_id`,
+        db.raw('COUNT(*)::int as total'),
+        db.raw(`COUNT(*) FILTER (WHERE ${TABLE}.due_date IS NOT NULL AND ${TABLE}.due_date < CURRENT_DATE)::int as overdue`),
+        db.raw(
+          `COUNT(*) FILTER (
+            WHERE COALESCE(${TABLE}.sla_override_hours, phases.sla_hours) IS NOT NULL
+              AND now() - ${TABLE}.current_phase_since > (COALESCE(${TABLE}.sla_override_hours, phases.sla_hours) || ' hours')::interval
+          )::int as sla_breached`
+        )
+      );
+  },
+
   create(input: {
     pipeline_id: number;
     current_phase_id: number;

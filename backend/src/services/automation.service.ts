@@ -20,6 +20,7 @@ import { validateFieldValue } from '../utils/fieldValidation';
 import { evaluateFormula, parseFormula } from '../utils/formulaEvaluator';
 import { assertPublicUrl } from '../utils/ssrfGuard';
 import { interpolateTemplate } from '../utils/templateInterpolation';
+import { wrapBrandedEmail } from '../utils/emailLayout';
 import { logger } from '../utils/logger';
 import { FormulaFieldService } from './formulaField.service';
 import { MailService } from './mail.service';
@@ -290,7 +291,7 @@ async function sendEmailTemplateDirect(
   const valuesByKey = await loadCardFieldsByKey(cardId, card.pipeline_id, card.title);
 
   const subject = interpolateTemplate(template.subject, { title: card.title, fields: valuesByKey });
-  const html = interpolateTemplate(template.body_html, { title: card.title, fields: valuesByKey });
+  const html = wrapBrandedEmail(interpolateTemplate(template.body_html, { title: card.title, fields: valuesByKey }));
 
   const recipients: string[] = [];
   switch (recipientConfig.recipient_type) {

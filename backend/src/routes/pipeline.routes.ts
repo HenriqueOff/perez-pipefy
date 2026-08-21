@@ -18,6 +18,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', asyncHandler(PipelineController.list));
+router.get('/overview', asyncHandler(PipelineController.overview));
 router.post('/', validateBody(createPipelineSchema), asyncHandler(PipelineController.create));
 router.get('/:pipelineId', requirePipelineRole('viewer'), asyncHandler(PipelineController.detail));
 router.patch(

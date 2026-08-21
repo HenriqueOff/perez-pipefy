@@ -25,6 +25,40 @@ export const CardHistoryModel = {
       .orderBy('card_history.created_at', 'desc');
   },
 
+  /** Feed simples de atividade recente pra tela inicial, cruzando várias pipelines. */
+  listRecentForPipelines(pipelineIds: number[], limit: number) {
+    if (pipelineIds.length === 0) return Promise.resolve([]);
+    return db(TABLE)
+      .join('cards', 'cards.id', `${TABLE}.card_id`)
+      .join('pipelines', 'pipelines.id', 'cards.pipeline_id')
+      .leftJoin('users', 'users.id', `${TABLE}.user_id`)
+      .whereIn('cards.pipeline_id', pipelineIds)
+      .andWhere('pipelines.archived', false)
+      .orderBy(`${TABLE}.created_at`, 'desc')
+      .limit(limit)
+      .select<
+        {
+          id: number;
+          event_type: CardHistoryEventType;
+          created_at: Date;
+          card_id: number;
+          card_title: string;
+          pipeline_id: number;
+          pipeline_name: string;
+          user_name: string | null;
+        }[]
+      >(
+        `${TABLE}.id`,
+        `${TABLE}.event_type`,
+        `${TABLE}.created_at`,
+        'cards.id as card_id',
+        'cards.title as card_title',
+        'cards.pipeline_id',
+        'pipelines.name as pipeline_name',
+        'users.name as user_name'
+      );
+  },
+
   listPhaseTransitionsByPipeline(pipelineId: number) {
     return db<CardHistoryRow>(TABLE)
       .join('cards', 'cards.id', `${TABLE}.card_id`)

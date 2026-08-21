@@ -22,11 +22,13 @@ import {
   PipelineDetail,
   PipelineMember,
   PipelineRole,
+  PipelinesOverview,
   SearchCardResult,
 } from '../types';
 
 export const PipelinesApi = {
   list: () => api.get<Pipeline[]>('/pipelines').then((r) => r.data),
+  overview: () => api.get<PipelinesOverview>('/pipelines/overview').then((r) => r.data),
   detail: (id: number) => api.get<PipelineDetail>(`/pipelines/${id}`).then((r) => r.data),
   create: (input: { name: string; description?: string }) =>
     api.post<Pipeline>('/pipelines', input).then((r) => r.data),

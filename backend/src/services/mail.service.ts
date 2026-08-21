@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { env } from '../config/env';
+import { wrapBrandedEmail } from '../utils/emailLayout';
 
 let client: Resend | null = null;
 
@@ -27,14 +28,14 @@ export const MailService = {
   },
 
   sendPasswordReset(to: string, resetUrl: string): Promise<void> {
+    const bodyHtml = `
+      <p style="margin:0 0 12px;">Recebemos um pedido para redefinir a senha da sua conta no Pipelines (PEREZ &amp; FILHO).</p>
+      <p style="margin:0;color:#666278;font-size:13px;">Esse link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail.</p>
+    `;
     return MailService.sendEmail({
       to,
       subject: 'Redefinir senha - Pipelines',
-      html: `
-        <p>Recebemos um pedido para redefinir a senha da sua conta no Pipelines (PEREZ &amp; FILHO).</p>
-        <p><a href="${resetUrl}">Clique aqui para escolher uma nova senha</a></p>
-        <p>Esse link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail.</p>
-      `,
+      html: wrapBrandedEmail(bodyHtml, { label: 'Redefinir senha', url: resetUrl }),
     });
   },
 };

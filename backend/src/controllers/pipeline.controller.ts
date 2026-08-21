@@ -9,6 +9,11 @@ export const PipelineController = {
     res.json(pipelines);
   },
 
+  async overview(req: Request, res: Response) {
+    const overview = await PipelineService.getOverviewForUser(req.user!.id, req.user!.role === 'admin');
+    res.json(overview);
+  },
+
   async detail(req: Request, res: Response) {
     res.json(await PipelineService.getDetail(Number(req.params.pipelineId), req.user!.id));
   },

@@ -669,9 +669,44 @@ textarea:focus {
 }
 
 .pipeline-card p {
-  margin: 0;
+  margin: 0 0 12px;
   color: var(--color-text-muted);
   font-size: 13px;
+}
+
+.pipeline-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.pipeline-card-header h3 {
+  margin: 0;
+}
+
+.pipeline-card-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.pipeline-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.section-title {
+  margin: 32px 0 12px;
 }
 
 /* ---------- Kanban ---------- */
@@ -1341,6 +1376,8 @@ hr.div {
   font-weight: 500;
   padding: 3px 10px;
   border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
 }
 
 .status-badge-active {
@@ -1349,6 +1386,16 @@ hr.div {
 }
 
 .status-badge-inactive {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.status-badge-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.status-badge-danger {
   background: var(--color-danger-soft);
   color: var(--color-danger);
 }

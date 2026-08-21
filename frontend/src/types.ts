@@ -17,6 +17,28 @@ export interface Pipeline {
   created_by: number;
 }
 
+export interface PipelineOverviewItem extends Pipeline {
+  cardCount: number;
+  overdueCount: number;
+  slaBreachedCount: number;
+}
+
+export interface RecentActivityItem {
+  id: number;
+  event_type: string;
+  created_at: string;
+  card_id: number;
+  card_title: string;
+  pipeline_id: number;
+  pipeline_name: string;
+  user_name: string | null;
+}
+
+export interface PipelinesOverview {
+  pipelines: PipelineOverviewItem[];
+  recentActivity: RecentActivityItem[];
+}
+
 export interface CustomField {
   id: number;
   phase_id: number;

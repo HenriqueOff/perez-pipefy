@@ -1,3 +1,5 @@
+import { CardModel } from '../models/card.model';
+import { CardHistoryModel } from '../models/cardHistory.model';
 import { PipelineModel } from '../models/pipeline.model';
 import { PhaseModel } from '../models/phase.model';
 import { CustomFieldModel } from '../models/customField.model';
@@ -6,9 +8,32 @@ import { AppError } from '../utils/AppError';
 import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
 import { FormulaFieldService } from './formulaField.service';
 
+const RECENT_ACTIVITY_LIMIT = 15;
+
 export const PipelineService = {
   listForUser(userId: number, isAdmin: boolean) {
     return PipelineModel.listForUser(userId, isAdmin);
+  },
+
+  async getOverviewForUser(userId: number, isAdmin: boolean) {
+    const pipelines = await PipelineModel.listForUser(userId, isAdmin);
+    const pipelineIds = pipelines.map((p) => p.id);
+
+    const [stats, recentActivity] = await Promise.all([
+      CardModel.aggregateStatsByPipelines(pipelineIds),
+      CardHistoryModel.listRecentForPipelines(pipelineIds, RECENT_ACTIVITY_LIMIT),
+    ]);
+    const statsByPipeline = new Map(stats.map((s) => [s.pipeline_id, s]));
+
+    return {
+      pipelines: pipelines.map((p) => ({
+        ...p,
+        cardCount: statsByPipeline.get(p.id)?.total ?? 0,
+        overdueCount: statsByPipeline.get(p.id)?.overdue ?? 0,
+        slaBreachedCount: statsByPipeline.get(p.id)?.sla_breached ?? 0,
+      })),
+      recentActivity,
+    };
   },
 
   async getDetail(pipelineId: number, userId: number) {
