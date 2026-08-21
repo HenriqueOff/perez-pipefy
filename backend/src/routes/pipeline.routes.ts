@@ -9,6 +9,8 @@ import phaseRoutes from './phase.routes';
 import cardRoutes from './card.routes';
 import labelRoutes from './label.routes';
 import automationRoutes from './automation.routes';
+import emailTemplateRoutes from './emailTemplate.routes';
+import pipelineConnectionRoutes from './pipelineConnection.routes';
 import publicFormManageRoutes from './publicFormManage.routes';
 
 const router = Router();
@@ -40,6 +42,8 @@ router.use('/:pipelineId/phases', phaseRoutes);
 router.use('/:pipelineId/cards', cardRoutes);
 router.use('/:pipelineId/labels', labelRoutes);
 router.use('/:pipelineId/automations', automationRoutes);
+router.use('/:pipelineId/email-templates', emailTemplateRoutes);
+router.use('/:pipelineId/connections', pipelineConnectionRoutes);
 router.use('/:pipelineId/public-form', publicFormManageRoutes);
 
 export default router;

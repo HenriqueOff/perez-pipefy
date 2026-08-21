@@ -15,6 +15,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import commentRoutes from './comment.routes';
 import attachmentRoutes from './attachment.routes';
 import checklistRoutes from './checklist.routes';
+import cardConnectionRoutes from './cardConnection.routes';
 
 const router = Router({ mergeParams: true });
 
@@ -25,6 +26,7 @@ router.post(
   validateBody(createCardSchema),
   asyncHandler(CardController.create)
 );
+router.get('/search-connectable', requirePipelineRole('viewer'), asyncHandler(CardController.searchConnectable));
 router.get('/:cardId', requirePipelineRole('viewer'), asyncHandler(CardController.detail));
 router.patch(
   '/:cardId',
@@ -65,5 +67,6 @@ router.delete('/:cardId/labels/:labelId', requirePipelineRole('editor'), asyncHa
 router.use('/:cardId/comments', commentRoutes);
 router.use('/:cardId/attachments', attachmentRoutes);
 router.use('/:cardId/checklist', checklistRoutes);
+router.use('/:cardId/connections', cardConnectionRoutes);
 
 export default router;

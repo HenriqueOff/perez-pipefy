@@ -13,6 +13,15 @@ export const AutomationModel = {
     return db<AutomationRow>(TABLE).where({ pipeline_id: pipelineId, trigger_type: triggerType, active: true });
   },
 
+  listActiveRecurring() {
+    return db<AutomationRow>(TABLE)
+      .join('pipelines', 'pipelines.id', `${TABLE}.pipeline_id`)
+      .where(`${TABLE}.trigger_type`, 'recurring_activity')
+      .andWhere(`${TABLE}.active`, true)
+      .andWhere('pipelines.archived', false)
+      .select(`${TABLE}.*`);
+  },
+
   findById(id: number) {
     return db<AutomationRow>(TABLE).where({ id }).first();
   },

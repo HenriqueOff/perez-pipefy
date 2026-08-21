@@ -9,9 +9,29 @@ import { CustomFieldModel } from '../models/customField.model';
 import { LabelModel } from '../models/label.model';
 import { PhaseModel } from '../models/phase.model';
 import { AutomationService } from './automation.service';
+import { FormulaFieldService } from './formulaField.service';
 import { NotificationService } from './notification.service';
+import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
 import { requiredFieldsMissing, validateFieldValue } from '../utils/fieldValidation';
+import { logger } from '../utils/logger';
+import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
+import { TriggerContext } from './automation.service';
+
+// Recalcular fórmulas nunca deve derrubar a operação que motivou a mudança de campo.
+async function recomputeFormulasSafely(cardId: number, actingUserId: number) {
+  await FormulaFieldService.recomputeForCard(cardId, actingUserId).catch((err) =>
+    logger.error({ err, cardId }, 'Falha ao recalcular campos de fórmula')
+  );
+}
+
+// Uma falha ao buscar/rodar automações nunca deve virar erro na requisição que já
+// commitou a ação do usuário (card criado/movido/atualizado) — só loga.
+async function runTriggersSafely(pipelineId: number, context: TriggerContext, actingUserId: number) {
+  await AutomationService.runTriggers(pipelineId, context, actingUserId).catch((err) =>
+    logger.error({ err, pipelineId, triggerType: context.type }, 'Falha ao disparar automações')
+  );
+}
 
 async function getFirstPhase(pipelineId: number) {
   const phases = await PhaseModel.listByPipeline(pipelineId);
@@ -26,7 +46,8 @@ async function applyFieldValues(
   phaseId: number,
   fields: Record<string, unknown>,
   userId: number,
-  trx: Knex.Transaction
+  trx: Knex.Transaction,
+  actorRole: PipelineRole
 ): Promise<{ fieldId: number; value: unknown }[]> {
   const customFields = await CustomFieldModel.listByPhase(phaseId);
   const byKey = new Map(customFields.map((f) => [f.key, f]));
@@ -36,6 +57,9 @@ async function applyFieldValues(
     const field = byKey.get(key);
     if (!field) {
       throw new AppError(`Campo customizado "${key}" não existe nesta fase`, 422);
+    }
+    if (!roleAtLeast(actorRole, field.min_edit_role ?? 'editor')) {
+      throw AppError.forbidden(`Você não tem permissão para editar o campo "${field.label}"`);
     }
     validateFieldValue(field, value);
 
@@ -62,22 +86,23 @@ async function applyFieldValues(
 
 async function runFieldAutomations(pipelineId: number, cardId: number, userId: number, pairs: { fieldId: number; value: unknown }[]) {
   for (const pair of pairs) {
-    await AutomationService.runTriggers(
-      pipelineId,
-      { type: 'field_updated', cardId, fieldId: pair.fieldId, value: pair.value },
-      userId
-    );
+    await runTriggersSafely(pipelineId, { type: 'field_updated', cardId, fieldId: pair.fieldId, value: pair.value }, userId);
   }
 }
 
 export const CardService = {
-  async listByPipeline(pipelineId: number) {
-    const [cards, labelRows, assigneeRows, checklistRows] = await Promise.all([
+  async listByPipeline(pipelineId: number, userId: number) {
+    const [cards, labelRows, assigneeRows, checklistRows, actorRole, allFields] = await Promise.all([
       CardModel.listByPipeline(pipelineId),
       LabelModel.listByPipelineCards(pipelineId),
       CardAssigneeModel.listByPipelineCards(pipelineId),
       ChecklistItemModel.countsByPipelineCards(pipelineId),
+      resolveActorRole(pipelineId, userId),
+      CustomFieldModel.listByPipeline(pipelineId),
     ]);
+    const visibleFieldIds = new Set(
+      allFields.filter((f) => roleAtLeast(actorRole, f.min_view_role ?? 'viewer')).map((f) => f.id)
+    );
     const checklistByCard = new Map<number, { total: number; done: number }>();
     for (const row of checklistRows) {
       checklistByCard.set(row.card_id, { total: Number(row.total), done: Number(row.done) });
@@ -97,7 +122,7 @@ export const CardService = {
     return Promise.all(
       cards.map(async (card) => ({
         ...card,
-        fieldValues: await CardFieldValueModel.listByCard(card.id),
+        fieldValues: (await CardFieldValueModel.listByCard(card.id)).filter((v) => visibleFieldIds.has(v.custom_field_id)),
         labels: labelsByCard.get(card.id) ?? [],
         assignees: assigneesByCard.get(card.id) ?? [],
         checklistSummary: checklistByCard.get(card.id) ?? { total: 0, done: 0 },
@@ -105,20 +130,29 @@ export const CardService = {
     );
   },
 
-  async getDetail(cardId: number) {
+  async getDetail(cardId: number, userId: number) {
     const card = await CardModel.findById(cardId);
     if (!card) {
       throw AppError.notFound('Card não encontrado');
     }
-    const [fieldValues, history, labels, assignees, checklist] = await Promise.all([
+    const [fieldValues, history, labels, assignees, checklist, actorRole, allFields] = await Promise.all([
       CardFieldValueModel.listByCard(card.id),
       CardHistoryModel.listByCard(card.id),
       LabelModel.listByCard(card.id),
       CardAssigneeModel.listByCard(card.id),
       ChecklistItemModel.listByCard(card.id),
+      resolveActorRole(card.pipeline_id, userId),
+      CustomFieldModel.listByPipeline(card.pipeline_id),
     ]);
+    const visibleFieldIds = new Set(
+      allFields.filter((f) => roleAtLeast(actorRole, f.min_view_role ?? 'viewer')).map((f) => f.id)
+    );
+    // uma entrada de histórico de field_updated carrega old_value/new_value diretamente —
+    // se não filtrar aqui também, o valor de um campo restrito vaza pela timeline.
+    const visibleFieldValues = fieldValues.filter((v) => visibleFieldIds.has(v.custom_field_id));
+    const visibleHistory = history.filter((h) => h.field_id == null || visibleFieldIds.has(h.field_id));
     const checklistSummary = { total: checklist.length, done: checklist.filter((i) => i.done).length };
-    return { ...card, fieldValues, history, labels, assignees, checklistSummary };
+    return { ...card, fieldValues: visibleFieldValues, history: visibleHistory, labels, assignees, checklistSummary };
   },
 
   async create(
@@ -136,6 +170,7 @@ export const CardService = {
     if (!phase || phase.pipeline_id !== pipelineId) {
       throw new AppError('Fase inválida para este pipeline', 422);
     }
+    const actorRole = await resolveActorRole(pipelineId, userId);
 
     const { card, fieldPairs } = await db.transaction(async (trx) => {
       const { count } = (await trx('cards').where({ current_phase_id: phase.id }).count<{ count: string }[]>('id as count').first()) ?? {
@@ -164,17 +199,14 @@ export const CardService = {
 
       let fieldPairs: { fieldId: number; value: unknown }[] = [];
       if (input.fields && Object.keys(input.fields).length > 0) {
-        fieldPairs = await applyFieldValues(created.id, phase.id, input.fields, userId, trx);
+        fieldPairs = await applyFieldValues(created.id, phase.id, input.fields, userId, trx, actorRole);
       }
 
       return { card: created, fieldPairs };
     });
 
-    await AutomationService.runTriggers(
-      pipelineId,
-      { type: 'card_created_in_phase', cardId: card.id, phaseId: phase.id },
-      userId
-    );
+    await recomputeFormulasSafely(card.id, userId);
+    await runTriggersSafely(pipelineId, { type: 'card_created_in_phase', cardId: card.id, phaseId: phase.id }, userId);
     await runFieldAutomations(pipelineId, card.id, userId, fieldPairs);
 
     return card;
@@ -237,6 +269,15 @@ export const CardService = {
       return card;
     }
 
+    const actorRole = await resolveActorRole(card.pipeline_id, userId);
+    const fromPhase = await PhaseModel.findById(card.current_phase_id);
+    if (!roleAtLeast(actorRole, fromPhase?.min_move_out_role ?? 'editor')) {
+      throw AppError.forbidden(`Você não tem permissão para tirar cards da fase "${fromPhase?.name}"`);
+    }
+    if (!roleAtLeast(actorRole, toPhase.min_move_in_role ?? 'editor')) {
+      throw AppError.forbidden(`Você não tem permissão para mover cards para a fase "${toPhase.name}"`);
+    }
+
     // regra: não é possível avançar sem preencher os campos obrigatórios da fase atual
     const currentFields = await CustomFieldModel.listByPhase(card.current_phase_id);
     const values = await CardFieldValueModel.listByCard(cardId);
@@ -282,10 +323,10 @@ export const CardService = {
       return result;
     });
 
-    await AutomationService.runTriggers(
-      card.pipeline_id,
-      { type: 'card_moved_to_phase', cardId, fromPhaseId, toPhaseId },
-      userId
+    await runTriggersSafely(card.pipeline_id, { type: 'card_moved_to_phase', cardId, fromPhaseId, toPhaseId }, userId);
+    await runTriggersSafely(card.pipeline_id, { type: 'card_left_phase', cardId, fromPhaseId, toPhaseId }, userId);
+    await AutomationService.checkAllConnectedCardsInPhase(cardId, userId).catch((err) =>
+      logger.error({ err, cardId }, 'Falha ao verificar automações de cards conectados')
     );
 
     return updated;
@@ -296,9 +337,13 @@ export const CardService = {
     if (!card) {
       throw AppError.notFound('Card não encontrado');
     }
+    const actorRole = await resolveActorRole(card.pipeline_id, userId);
 
-    const fieldPairs = await db.transaction((trx) => applyFieldValues(cardId, card.current_phase_id, fields, userId, trx));
+    const fieldPairs = await db.transaction((trx) =>
+      applyFieldValues(cardId, card.current_phase_id, fields, userId, trx, actorRole)
+    );
 
+    await recomputeFormulasSafely(cardId, userId);
     await runFieldAutomations(card.pipeline_id, cardId, userId, fieldPairs);
 
     return CardFieldValueModel.listByCard(cardId);

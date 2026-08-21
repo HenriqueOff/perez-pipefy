@@ -1,6 +1,6 @@
 export type GlobalRole = 'admin' | 'member';
 export type PipelineRole = 'owner' | 'manager' | 'editor' | 'viewer';
-export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'formula';
 
 export interface User {
   id: number;
@@ -24,6 +24,9 @@ export interface CustomField {
   key: string;
   type: CustomFieldType;
   options: string[] | null;
+  formula: string | null;
+  min_view_role: PipelineRole | null;
+  min_edit_role: PipelineRole | null;
   required: boolean;
   position: number;
 }
@@ -38,6 +41,8 @@ export interface Phase {
   is_final: boolean;
   sla_hours: number | null;
   wip_limit: number | null;
+  min_move_in_role: PipelineRole | null;
+  min_move_out_role: PipelineRole | null;
   customFields: CustomField[];
 }
 
@@ -109,7 +114,7 @@ export interface CardHistoryEntry {
   old_value: unknown;
   new_value: unknown;
   created_at: string;
-  user_name: string;
+  user_name: string | null;
 }
 
 export interface CardDetail extends Card {
@@ -145,8 +150,70 @@ export interface AdminUser {
   created_at: string;
 }
 
-export type AutomationTriggerType = 'card_created_in_phase' | 'card_moved_to_phase' | 'field_updated';
-export type AutomationActionType = 'move_to_phase' | 'assign_user' | 'add_label' | 'remove_label';
+export type AutomationTriggerType =
+  | 'card_created_in_phase'
+  | 'card_moved_to_phase'
+  | 'card_left_phase'
+  | 'field_updated'
+  | 'sla_breached'
+  | 'recurring_activity'
+  | 'all_connected_cards_in_phase';
+export type AutomationActionType =
+  | 'move_to_phase'
+  | 'assign_user'
+  | 'add_label'
+  | 'remove_label'
+  | 'update_field'
+  | 'create_card'
+  | 'distribute_assignees'
+  | 'send_email_template'
+  | 'apply_sla_rule'
+  | 'apply_formula'
+  | 'http_request'
+  | 'create_connected_card'
+  | 'move_connected_cards';
+
+export interface PipelineConnection {
+  id: number;
+  owner_pipeline_id: number;
+  target_pipeline_id: number;
+  name: string;
+}
+
+export interface ConnectedCardSummary {
+  card_connection_id: number;
+  pipeline_connection_id: number;
+  card_id: number;
+  title: string;
+  pipeline_id: number;
+  pipeline_name: string;
+  phase_name: string;
+}
+
+export interface CardConnectionGroup {
+  connection: PipelineConnection;
+  cards: ConnectedCardSummary[];
+}
+
+export interface CardConnectionsResponse {
+  asOwner: CardConnectionGroup[];
+  asTarget: CardConnectionGroup[];
+}
+
+export interface SearchCardResult {
+  card_id: number;
+  title: string;
+  pipeline_id: number;
+  phase_name: string;
+}
+
+export interface EmailTemplate {
+  id: number;
+  pipeline_id: number;
+  name: string;
+  subject: string;
+  body_html: string;
+}
 
 export interface Automation {
   id: number;

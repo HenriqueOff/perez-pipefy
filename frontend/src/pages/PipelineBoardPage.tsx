@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { PipelinesApi } from '../api/pipelines';
-import { Card, Phase } from '../types';
+import { Card, Phase, PipelineRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 import KanbanColumn from '../components/KanbanColumn';
 import CardDetailModal from '../components/CardDetailModal';
@@ -11,6 +11,7 @@ import PipelineMembersModal from '../components/PipelineMembersModal';
 import PhaseSettingsModal from '../components/PhaseSettingsModal';
 import LabelsModal from '../components/LabelsModal';
 import AutomationsModal from '../components/AutomationsModal';
+import ConnectionsModal from '../components/ConnectionsModal';
 import PublicFormModal from '../components/PublicFormModal';
 import CardsTableView from '../components/CardsTableView';
 import DashboardView from '../components/DashboardView';
@@ -41,6 +42,7 @@ export default function PipelineBoardPage() {
   const [showMembers, setShowMembers] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [showAutomations, setShowAutomations] = useState(false);
+  const [showConnections, setShowConnections] = useState(false);
   const [showPublicForm, setShowPublicForm] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'dashboard'>('kanban');
   const [settingsPhaseId, setSettingsPhaseId] = useState<number | null>(null);
@@ -49,6 +51,7 @@ export default function PipelineBoardPage() {
   const canManageMembers = user?.role === 'admin' || currentMembership?.pipeline_role === 'owner' || currentMembership?.pipeline_role === 'manager';
   const canManagePhases = canManageMembers;
   const canEdit = user?.role === 'admin' || (!!currentMembership && currentMembership.pipeline_role !== 'viewer');
+  const userRole: PipelineRole = user?.role === 'admin' ? 'owner' : currentMembership?.pipeline_role ?? 'viewer';
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -173,6 +176,11 @@ export default function PipelineBoardPage() {
             </button>
           )}
           {canManagePhases && (
+            <button className="secondary-button" onClick={() => setShowConnections(true)}>
+              Conexões
+            </button>
+          )}
+          {canManagePhases && (
             <button className="secondary-button" onClick={() => setShowPublicForm(true)}>
               Formulário público
             </button>
@@ -246,6 +254,7 @@ export default function PipelineBoardPage() {
           phases={pipeline.phases}
           members={pipeline.members}
           canEdit={canEdit}
+          userRole={userRole}
           onClose={() => {
             setSelectedCardId(null);
             if (searchParams.has('card')) {
@@ -276,6 +285,10 @@ export default function PipelineBoardPage() {
           canManage={canManagePhases}
           onClose={() => setShowAutomations(false)}
         />
+      )}
+
+      {showConnections && (
+        <ConnectionsModal pipelineId={id} canManage={canManagePhases} onClose={() => setShowConnections(false)} />
       )}
 
       {showPublicForm && <PublicFormModal pipelineId={id} onClose={() => setShowPublicForm(false)} />}

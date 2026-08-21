@@ -7,7 +7,7 @@ const TABLE = 'card_history';
 
 export interface CardHistoryInput {
   card_id: number;
-  user_id: number;
+  user_id: number | null;
   event_type: CardHistoryEventType;
   from_phase_id?: number | null;
   to_phase_id?: number | null;
@@ -19,7 +19,7 @@ export interface CardHistoryInput {
 export const CardHistoryModel = {
   listByCard(cardId: number) {
     return db<CardHistoryRow>(TABLE)
-      .join('users', 'users.id', 'card_history.user_id')
+      .leftJoin('users', 'users.id', 'card_history.user_id')
       .where({ card_id: cardId })
       .select('card_history.*', 'users.name as user_name')
       .orderBy('card_history.created_at', 'desc');

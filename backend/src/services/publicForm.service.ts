@@ -67,23 +67,29 @@ export const PublicFormService = {
     const { pipeline, fields } = await resolveInitialPhaseFields(token);
     return {
       pipeline_name: pipeline.name,
-      fields: fields.map((f) => ({
-        key: f.key,
-        label: f.label,
-        type: f.type,
-        options: f.options,
-        required: f.required,
-      })),
+      // campos com qualquer restrição de papel (min_view_role/min_edit_role) nunca
+      // aparecem pro público — não é uma checagem de papel, é "isso é interno".
+      fields: fields
+        .filter((f) => f.min_view_role == null && f.min_edit_role == null)
+        .map((f) => ({
+          key: f.key,
+          label: f.label,
+          type: f.type,
+          options: f.options,
+          required: f.required,
+        })),
     };
   },
 
   async submit(token: string, input: { title: string; fields?: Record<string, unknown> }) {
     const { pipeline, fields } = await resolveInitialPhaseFields(token);
 
+    const publicFields = fields.filter((f) => f.min_view_role == null && f.min_edit_role == null);
+
     // um formulário público não tem uma etapa posterior de "preencher antes de mover":
     // os campos obrigatórios precisam ser exigidos já na submissão.
     const submitted = input.fields ?? {};
-    const missing = fields.filter((f) => {
+    const missing = publicFields.filter((f) => {
       if (!f.required) return false;
       const value = submitted[f.key];
       return value === null || value === undefined || value === '';
@@ -92,8 +98,16 @@ export const PublicFormService = {
       throw new AppError(`Preencha os campos obrigatórios: ${missing.map((f) => f.label).join(', ')}`, 422);
     }
 
+    // descarta silenciosamente qualquer valor submetido pra campo restrito (nunca deveria
+    // chegar aqui via o formulário de verdade, já que getPublicSchema não os expõe — mas
+    // uma chamada direta à API não pode conseguir escrever neles mesmo assim).
+    const allowedKeys = new Set(publicFields.map((f) => f.key));
+    const filteredFields = Object.fromEntries(
+      Object.entries(input.fields ?? {}).filter(([key]) => allowedKeys.has(key))
+    );
+
     // atribuído a quem criou o pipeline: não existe um usuário "anônimo" no schema
     // e card_history/cards.created_by exigem um usuário válido.
-    return CardService.create(pipeline.id, pipeline.created_by, { title: input.title, fields: input.fields });
+    return CardService.create(pipeline.id, pipeline.created_by, { title: input.title, fields: filteredFields });
   },
 };

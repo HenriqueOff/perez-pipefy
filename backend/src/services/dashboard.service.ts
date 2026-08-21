@@ -28,8 +28,9 @@ export const DashboardService = {
 
     const slaBreachedCount = cards.filter((c) => {
       const phase = phaseById.get(c.current_phase_id);
-      if (!phase?.sla_hours) return false;
-      return now - new Date(c.current_phase_since).getTime() > phase.sla_hours * 3600000;
+      const effectiveSla = c.sla_override_hours ?? phase?.sla_hours;
+      if (!effectiveSla) return false;
+      return now - new Date(c.current_phase_since).getTime() > effectiveSla * 3600000;
     }).length;
 
     const assigneesByCard = new Map<number, { user_id: number; name: string }[]>();

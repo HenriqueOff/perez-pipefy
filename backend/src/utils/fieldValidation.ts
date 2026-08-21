@@ -38,6 +38,8 @@ export function validateFieldValue(field: CustomFieldRow, value: unknown): void 
       }
       break;
     }
+    case 'formula':
+      throw new AppError(`O campo "${field.label}" é calculado automaticamente e não pode ser preenchido diretamente`, 422);
   }
 }
 

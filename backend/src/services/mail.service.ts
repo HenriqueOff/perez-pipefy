@@ -14,9 +14,20 @@ function getClient(): Resend {
 }
 
 export const MailService = {
-  async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
+  async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<void> {
     const { error } = await getClient().emails.send({
       from: env.mailFrom,
+      to,
+      subject,
+      html,
+    });
+    if (error) {
+      throw new Error(`Falha ao enviar e-mail: ${error.message}`);
+    }
+  },
+
+  sendPasswordReset(to: string, resetUrl: string): Promise<void> {
+    return MailService.sendEmail({
       to,
       subject: 'Redefinir senha - Pipelines',
       html: `
@@ -25,8 +36,5 @@ export const MailService = {
         <p>Esse link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail.</p>
       `,
     });
-    if (error) {
-      throw new Error(`Falha ao enviar e-mail: ${error.message}`);
-    }
   },
 };

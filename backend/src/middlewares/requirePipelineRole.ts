@@ -3,13 +3,7 @@ import { PipelineModel } from '../models/pipeline.model';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
-
-const ROLE_LEVEL: Record<PipelineRole, number> = {
-  viewer: 1,
-  editor: 2,
-  manager: 3,
-  owner: 4,
-};
+import { ROLE_LEVEL } from '../utils/pipelineRole';
 
 /**
  * Exige que o usuário seja membro do pipeline (na rota como :pipelineId) com papel igual ou

@@ -3,26 +3,31 @@ import { PhaseModel } from '../models/phase.model';
 import { CustomFieldModel } from '../models/customField.model';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
+import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
+import { FormulaFieldService } from './formulaField.service';
 
 export const PipelineService = {
   listForUser(userId: number, isAdmin: boolean) {
     return PipelineModel.listForUser(userId, isAdmin);
   },
 
-  async getDetail(pipelineId: number) {
+  async getDetail(pipelineId: number, userId: number) {
     const pipeline = await PipelineModel.findSafeById(pipelineId);
     if (!pipeline) {
       throw AppError.notFound('Pipeline não encontrado');
     }
-    const [phases, members] = await Promise.all([
+    const [phases, members, actorRole] = await Promise.all([
       PhaseModel.listByPipeline(pipelineId),
       PipelineModel.listMembers(pipelineId),
+      resolveActorRole(pipelineId, userId),
     ]);
 
     const phasesWithFields = await Promise.all(
       phases.map(async (phase) => ({
         ...phase,
-        customFields: await CustomFieldModel.listByPhase(phase.id),
+        customFields: (await CustomFieldModel.listByPhase(phase.id)).filter((f) =>
+          roleAtLeast(actorRole, f.min_view_role ?? 'viewer')
+        ),
       }))
     );
 
@@ -72,6 +77,8 @@ export const PipelineService = {
       is_final?: boolean;
       sla_hours?: number | null;
       wip_limit?: number | null;
+      min_move_in_role?: PipelineRole | null;
+      min_move_out_role?: PipelineRole | null;
     }
   ) {
     const pipeline = await PipelineModel.findById(pipelineId);
@@ -94,6 +101,8 @@ export const PipelineService = {
       is_final: input.is_final ?? false,
       sla_hours: input.sla_hours ?? null,
       wip_limit: input.wip_limit ?? null,
+      min_move_in_role: input.min_move_in_role ?? null,
+      min_move_out_role: input.min_move_out_role ?? null,
     });
   },
 
@@ -107,6 +116,8 @@ export const PipelineService = {
       is_final?: boolean;
       sla_hours?: number | null;
       wip_limit?: number | null;
+      min_move_in_role?: PipelineRole | null;
+      min_move_out_role?: PipelineRole | null;
     }
   ) {
     const phase = await PhaseModel.findById(phaseId);
@@ -132,7 +143,17 @@ export const PipelineService = {
 
   async createCustomField(
     phaseId: number,
-    input: { label: string; key: string; type: string; options?: string[]; required?: boolean; position?: number }
+    input: {
+      label: string;
+      key: string;
+      type: string;
+      options?: string[];
+      formula?: string;
+      min_view_role?: PipelineRole | null;
+      min_edit_role?: PipelineRole | null;
+      required?: boolean;
+      position?: number;
+    }
   ) {
     const phase = await PhaseModel.findById(phaseId);
     if (!phase) {
@@ -141,6 +162,15 @@ export const PipelineService = {
 
     if ((input.type === 'select') && (!input.options || input.options.length === 0)) {
       throw new AppError('Campos do tipo select precisam de ao menos uma opção', 422);
+    }
+    if (input.type === 'formula') {
+      if (!input.formula?.trim()) {
+        throw new AppError('Campos do tipo fórmula precisam de uma expressão', 422);
+      }
+      await FormulaFieldService.validateFormula(phase.pipeline_id, input.key, input.formula);
+    }
+    if (!roleAtLeast(input.min_edit_role ?? 'editor', input.min_view_role ?? 'viewer')) {
+      throw new AppError('O papel mínimo pra editar não pode ser menor que o papel mínimo pra ver o campo', 422);
     }
 
     let position = input.position;
@@ -155,15 +185,43 @@ export const PipelineService = {
       key: input.key,
       type: input.type as never,
       options: input.options ?? null,
+      formula: input.type === 'formula' ? input.formula ?? null : null,
+      min_view_role: input.min_view_role ?? null,
+      min_edit_role: input.min_edit_role ?? null,
       required: input.required ?? false,
       position,
     });
   },
 
-  async updateCustomField(fieldId: number, changes: { label?: string; options?: string[]; required?: boolean; position?: number }) {
+  async updateCustomField(
+    fieldId: number,
+    changes: {
+      label?: string;
+      options?: string[];
+      formula?: string;
+      min_view_role?: PipelineRole | null;
+      min_edit_role?: PipelineRole | null;
+      required?: boolean;
+      position?: number;
+    }
+  ) {
     const field = await CustomFieldModel.findById(fieldId);
     if (!field) {
       throw AppError.notFound('Campo não encontrado');
+    }
+    if (field.type === 'formula' && changes.formula !== undefined) {
+      if (!changes.formula.trim()) {
+        throw new AppError('Campos do tipo fórmula precisam de uma expressão', 422);
+      }
+      const phase = await PhaseModel.findById(field.phase_id);
+      await FormulaFieldService.validateFormula(phase!.pipeline_id, field.key, changes.formula, field.id);
+    }
+    if (changes.min_view_role !== undefined || changes.min_edit_role !== undefined) {
+      const nextViewRole = changes.min_view_role !== undefined ? changes.min_view_role : field.min_view_role;
+      const nextEditRole = changes.min_edit_role !== undefined ? changes.min_edit_role : field.min_edit_role;
+      if (!roleAtLeast(nextEditRole ?? 'editor', nextViewRole ?? 'viewer')) {
+        throw new AppError('O papel mínimo pra editar não pode ser menor que o papel mínimo pra ver o campo', 422);
+      }
     }
     return CustomFieldModel.update(fieldId, changes);
   },

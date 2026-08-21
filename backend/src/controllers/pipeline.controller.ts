@@ -10,7 +10,7 @@ export const PipelineController = {
   },
 
   async detail(req: Request, res: Response) {
-    res.json(await PipelineService.getDetail(Number(req.params.pipelineId)));
+    res.json(await PipelineService.getDetail(Number(req.params.pipelineId), req.user!.id));
   },
 
   async create(req: Request, res: Response) {

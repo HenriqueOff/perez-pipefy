@@ -1,8 +1,40 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
-import { CustomField, CustomFieldType, Phase } from '../types';
+import { CustomField, CustomFieldType, Phase, PipelineRole } from '../types';
 import Icon from './Icon';
+
+const ROLE_LABELS: Record<PipelineRole, string> = {
+  viewer: 'Viewer',
+  editor: 'Editor',
+  manager: 'Manager',
+  owner: 'Owner',
+};
+const ROLE_OPTIONS = Object.keys(ROLE_LABELS) as PipelineRole[];
+
+function RoleSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PipelineRole | '';
+  onChange: (value: PipelineRole | '') => void;
+}) {
+  return (
+    <label className="field-input">
+      {label}
+      <select value={value} onChange={(e) => onChange(e.target.value as PipelineRole | '')}>
+        <option value="">Padrão</option>
+        {ROLE_OPTIONS.map((r) => (
+          <option key={r} value={r}>
+            {ROLE_LABELS[r]}+
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   text: 'Texto curto',
@@ -11,7 +43,10 @@ const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   date: 'Data',
   boolean: 'Sim/Não',
   select: 'Lista de opções',
+  formula: 'Fórmula',
 };
+
+const FORMULA_HELP = 'Use as keys dos campos do pipeline como variáveis. Operadores: + - * / %. Funções: ROUND(x, casas), MIN(a, b), MAX(a, b), ABS(x).';
 
 const FIELD_TYPES = Object.keys(FIELD_TYPE_LABELS) as CustomFieldType[];
 
@@ -46,6 +81,8 @@ export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props
   const [isFinal, setIsFinal] = useState(phase.is_final);
   const [slaHours, setSlaHours] = useState(phase.sla_hours != null ? String(phase.sla_hours) : '');
   const [wipLimit, setWipLimit] = useState(phase.wip_limit != null ? String(phase.wip_limit) : '');
+  const [minMoveInRole, setMinMoveInRole] = useState<PipelineRole | ''>(phase.min_move_in_role ?? '');
+  const [minMoveOutRole, setMinMoveOutRole] = useState<PipelineRole | ''>(phase.min_move_out_role ?? '');
 
   const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
   const [showAddField, setShowAddField] = useState(false);
@@ -61,6 +98,8 @@ export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props
         is_final: isFinal,
         sla_hours: slaHours.trim() ? Number(slaHours) : null,
         wip_limit: wipLimit.trim() ? Number(wipLimit) : null,
+        min_move_in_role: minMoveInRole || null,
+        min_move_out_role: minMoveOutRole || null,
       }),
     onSuccess: () => {
       setError(null);
@@ -140,6 +179,10 @@ export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props
                   onChange={(e) => setWipLimit(e.target.value)}
                 />
               </label>
+            </div>
+            <div className="modal-top-fields">
+              <RoleSelect label="Quem pode mover card PRA CÁ" value={minMoveInRole} onChange={setMinMoveInRole} />
+              <RoleSelect label="Quem pode mover card PRA FORA daqui" value={minMoveOutRole} onChange={setMinMoveOutRole} />
             </div>
             <div className="phase-flags">
               <label className="checkbox-label">
@@ -244,7 +287,10 @@ function AddFieldForm({
   const [type, setType] = useState<CustomFieldType>('text');
   const [required, setRequired] = useState(false);
   const [optionsText, setOptionsText] = useState('');
+  const [formula, setFormula] = useState('');
   const [keyTouched, setKeyTouched] = useState(false);
+  const [minViewRole, setMinViewRole] = useState<PipelineRole | ''>('');
+  const [minEditRole, setMinEditRole] = useState<PipelineRole | ''>('');
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -254,6 +300,9 @@ function AddFieldForm({
         type,
         required,
         options: type === 'select' ? optionsText.split(',').map((o) => o.trim()).filter(Boolean) : undefined,
+        formula: type === 'formula' ? formula.trim() : undefined,
+        min_view_role: minViewRole || null,
+        min_edit_role: minEditRole || null,
       }),
     onSuccess: onDone,
     onError: (err: unknown) => {
@@ -270,6 +319,7 @@ function AddFieldForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!label.trim() || !key.trim()) return;
+    if (type === 'formula' && !formula.trim()) return;
     createMutation.mutate();
   }
 
@@ -306,6 +356,20 @@ function AddFieldForm({
             <input value={optionsText} onChange={(e) => setOptionsText(e.target.value)} placeholder="Opção A, Opção B" />
           </label>
         )}
+        {type === 'formula' && (
+          <label className="field-input">
+            Fórmula
+            <textarea
+              value={formula}
+              onChange={(e) => setFormula(e.target.value)}
+              rows={2}
+              placeholder="valor_venda * 0.06"
+            />
+            <span className="muted">{FORMULA_HELP}</span>
+          </label>
+        )}
+        <RoleSelect label="Quem pode ver" value={minViewRole} onChange={setMinViewRole} />
+        <RoleSelect label="Quem pode editar" value={minEditRole} onChange={setMinEditRole} />
       </div>
       <label className="checkbox-label">
         <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
@@ -336,6 +400,9 @@ function EditFieldForm({
   const [label, setLabel] = useState(field.label);
   const [required, setRequired] = useState(field.required);
   const [optionsText, setOptionsText] = useState((field.options ?? []).join(', '));
+  const [formula, setFormula] = useState(field.formula ?? '');
+  const [minViewRole, setMinViewRole] = useState<PipelineRole | ''>(field.min_view_role ?? '');
+  const [minEditRole, setMinEditRole] = useState<PipelineRole | ''>(field.min_edit_role ?? '');
 
   const updateMutation = useMutation({
     mutationFn: () =>
@@ -343,6 +410,9 @@ function EditFieldForm({
         label: label.trim(),
         required,
         options: field.type === 'select' ? optionsText.split(',').map((o) => o.trim()).filter(Boolean) : undefined,
+        formula: field.type === 'formula' ? formula.trim() : undefined,
+        min_view_role: minViewRole || null,
+        min_edit_role: minEditRole || null,
       }),
     onSuccess: onDone,
     onError: (err: unknown) => {
@@ -354,6 +424,7 @@ function EditFieldForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!label.trim()) return;
+    if (field.type === 'formula' && !formula.trim()) return;
     updateMutation.mutate();
   }
 
@@ -371,6 +442,15 @@ function EditFieldForm({
               <input value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
             </label>
           )}
+          {field.type === 'formula' && (
+            <label className="field-input">
+              Fórmula
+              <textarea value={formula} onChange={(e) => setFormula(e.target.value)} rows={2} />
+              <span className="muted">{FORMULA_HELP}</span>
+            </label>
+          )}
+          <RoleSelect label="Quem pode ver" value={minViewRole} onChange={setMinViewRole} />
+          <RoleSelect label="Quem pode editar" value={minEditRole} onChange={setMinEditRole} />
         </div>
         <label className="checkbox-label">
           <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />

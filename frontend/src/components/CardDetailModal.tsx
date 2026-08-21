@@ -1,11 +1,13 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
-import { CustomField, Phase, PipelineMember } from '../types';
+import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
+import { roleAtLeast } from '../utils/roles';
 import AttachmentList from './AttachmentList';
 import CardLabels from './CardLabels';
 import CardAssignees from './CardAssignees';
 import ChecklistSection from './ChecklistSection';
+import ConnectedCardsSection from './ConnectedCardsSection';
 import Icon from './Icon';
 
 interface Props {
@@ -14,10 +16,11 @@ interface Props {
   phases: Phase[];
   members: PipelineMember[];
   canEdit: boolean;
+  userRole: PipelineRole;
   onClose: () => void;
 }
 
-export default function CardDetailModal({ pipelineId, cardId, phases, members, canEdit, onClose }: Props) {
+export default function CardDetailModal({ pipelineId, cardId, phases, members, canEdit, userRole, onClose }: Props) {
   const queryClient = useQueryClient();
   const { data: card } = useQuery({
     queryKey: ['card', pipelineId, cardId],
@@ -149,6 +152,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
                 field={field}
                 value={valuesByFieldId.get(field.id)}
                 onCommit={(value) => handleFieldBlur(field, value)}
+                disabled={!canEdit || !roleAtLeast(userRole, field.min_edit_role ?? 'editor')}
               />
             ))}
           </div>
@@ -162,7 +166,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
                 </span>
                 <div className="timeline-content">
                   <span>
-                    <strong>{h.user_name}</strong> {describeEvent(h)}
+                    <strong>{h.user_name ?? 'Automação'}</strong> {describeEvent(h)}
                   </span>
                   <span className="muted">{new Date(h.created_at).toLocaleString('pt-BR')}</span>
                 </div>
@@ -176,6 +180,9 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
 
           <h3>Anexos</h3>
           <AttachmentList pipelineId={pipelineId} cardId={cardId} canEdit={canEdit} />
+
+          <h3>Cards conectados</h3>
+          <ConnectedCardsSection pipelineId={pipelineId} cardId={cardId} canEdit={canEdit} />
 
           <h3>Comentários</h3>
           <ul className="comment-list">
@@ -243,10 +250,12 @@ function FieldInput({
   field,
   value,
   onCommit,
+  disabled,
 }: {
   field: CustomField;
   value: unknown;
   onCommit: (value: unknown) => void;
+  disabled?: boolean;
 }) {
   const [local, setLocal] = useState(value ?? (field.type === 'boolean' ? false : ''));
 
@@ -259,6 +268,7 @@ function FieldInput({
           value={String(local ?? '')}
           onChange={(e) => setLocal(e.target.value)}
           onBlur={() => onCommit(local)}
+          disabled={disabled}
         />
       )}
       {field.type === 'textarea' && (
@@ -266,6 +276,7 @@ function FieldInput({
           value={String(local ?? '')}
           onChange={(e) => setLocal(e.target.value)}
           onBlur={() => onCommit(local)}
+          disabled={disabled}
         />
       )}
       {field.type === 'number' && (
@@ -274,6 +285,7 @@ function FieldInput({
           value={local === '' ? '' : Number(local)}
           onChange={(e) => setLocal(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={() => onCommit(local === '' ? null : Number(local))}
+          disabled={disabled}
         />
       )}
       {field.type === 'date' && (
@@ -282,6 +294,7 @@ function FieldInput({
           value={String(local ?? '')}
           onChange={(e) => setLocal(e.target.value)}
           onBlur={() => onCommit(local)}
+          disabled={disabled}
         />
       )}
       {field.type === 'boolean' && (
@@ -292,10 +305,15 @@ function FieldInput({
             setLocal(e.target.checked);
             onCommit(e.target.checked);
           }}
+          disabled={disabled}
         />
       )}
       {field.type === 'select' && (
-        <select value={String(local ?? '')} onChange={(e) => { setLocal(e.target.value); onCommit(e.target.value); }}>
+        <select
+          value={String(local ?? '')}
+          onChange={(e) => { setLocal(e.target.value); onCommit(e.target.value); }}
+          disabled={disabled}
+        >
           <option value="">Selecione...</option>
           {(field.options ?? []).map((opt) => (
             <option key={opt} value={opt}>

@@ -1,6 +1,6 @@
 import { db } from '../config/db';
 import { CustomFieldRow } from '../types/entities';
-import { CustomFieldType } from '../types/enums';
+import { CustomFieldType, PipelineRole } from '../types/enums';
 
 const TABLE = 'custom_fields';
 
@@ -27,6 +27,9 @@ export const CustomFieldModel = {
     key: string;
     type: CustomFieldType;
     options?: string[] | null;
+    formula?: string | null;
+    min_view_role?: PipelineRole | null;
+    min_edit_role?: PipelineRole | null;
     required?: boolean;
     position: number;
   }) {
@@ -39,7 +42,9 @@ export const CustomFieldModel = {
 
   update(
     id: number,
-    changes: Partial<Pick<CustomFieldRow, 'label' | 'options' | 'required' | 'position'>>
+    changes: Partial<
+      Pick<CustomFieldRow, 'label' | 'options' | 'formula' | 'min_view_role' | 'min_edit_role' | 'required' | 'position'>
+    >
   ) {
     const payload: Record<string, unknown> = { ...changes, updated_at: db.fn.now() };
     if (changes.options !== undefined) {

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const roleSchema = z.enum(['viewer', 'editor', 'manager', 'owner']);
+
 export const createPipelineSchema = z.object({
   name: z.string().min(1).max(150),
   description: z.string().max(2000).optional(),
@@ -24,6 +26,8 @@ export const createPhaseSchema = z.object({
   is_final: z.boolean().optional(),
   sla_hours: z.number().int().positive().nullable().optional(),
   wip_limit: z.number().int().positive().nullable().optional(),
+  min_move_in_role: roleSchema.nullable().optional(),
+  min_move_out_role: roleSchema.nullable().optional(),
 });
 
 export const updatePhaseSchema = z.object({
@@ -34,6 +38,8 @@ export const updatePhaseSchema = z.object({
   is_final: z.boolean().optional(),
   sla_hours: z.number().int().positive().nullable().optional(),
   wip_limit: z.number().int().positive().nullable().optional(),
+  min_move_in_role: roleSchema.nullable().optional(),
+  min_move_out_role: roleSchema.nullable().optional(),
 });
 
 export const createCustomFieldSchema = z.object({
@@ -43,8 +49,11 @@ export const createCustomFieldSchema = z.object({
     .min(1)
     .max(100)
     .regex(/^[a-z0-9_]+$/, 'key deve conter apenas letras minúsculas, números e underscore'),
-  type: z.enum(['text', 'textarea', 'number', 'date', 'boolean', 'select']),
+  type: z.enum(['text', 'textarea', 'number', 'date', 'boolean', 'select', 'formula']),
   options: z.array(z.string()).optional(),
+  formula: z.string().min(1).max(500).optional(),
+  min_view_role: roleSchema.nullable().optional(),
+  min_edit_role: roleSchema.nullable().optional(),
   required: z.boolean().optional(),
   position: z.number().int().min(0).optional(),
 });
@@ -52,6 +61,9 @@ export const createCustomFieldSchema = z.object({
 export const updateCustomFieldSchema = z.object({
   label: z.string().min(1).max(150).optional(),
   options: z.array(z.string()).optional(),
+  formula: z.string().min(1).max(500).optional(),
+  min_view_role: roleSchema.nullable().optional(),
+  min_edit_role: roleSchema.nullable().optional(),
   required: z.boolean().optional(),
   position: z.number().int().min(0).optional(),
 });

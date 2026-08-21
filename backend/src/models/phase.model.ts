@@ -1,5 +1,6 @@
 import { db } from '../config/db';
 import { PhaseRow } from '../types/entities';
+import { PipelineRole } from '../types/enums';
 
 const TABLE = 'phases';
 
@@ -21,6 +22,8 @@ export const PhaseModel = {
     is_final?: boolean;
     sla_hours?: number | null;
     wip_limit?: number | null;
+    min_move_in_role?: PipelineRole | null;
+    min_move_out_role?: PipelineRole | null;
   }) {
     return db<PhaseRow>(TABLE)
       .insert(input)
@@ -31,7 +34,18 @@ export const PhaseModel = {
   update(
     id: number,
     changes: Partial<
-      Pick<PhaseRow, 'name' | 'position' | 'color' | 'is_initial' | 'is_final' | 'sla_hours' | 'wip_limit'>
+      Pick<
+        PhaseRow,
+        | 'name'
+        | 'position'
+        | 'color'
+        | 'is_initial'
+        | 'is_final'
+        | 'sla_hours'
+        | 'wip_limit'
+        | 'min_move_in_role'
+        | 'min_move_out_role'
+      >
     >
   ) {
     return db<PhaseRow>(TABLE)

@@ -3,6 +3,8 @@ import { NotificationModel } from '../models/notification.model';
 import { CardAssigneeModel } from '../models/cardAssignee.model';
 import { CardModel } from '../models/card.model';
 import { UserModel } from '../models/user.model';
+import { AutomationService } from './automation.service';
+import { logger } from '../utils/logger';
 
 export const NotificationService = {
   listForUser(userId: number) {
@@ -22,14 +24,27 @@ export const NotificationService = {
     return NotificationModel.markAllRead(userId);
   },
 
-  async notifyCardAssigned(cardId: number, assignedUserId: number, actingUserId: number) {
+  async notifyCardAssigned(
+    cardId: number,
+    assignedUserId: number,
+    actingUserId: number | null,
+    task?: { dueDate?: string | null; note?: string | null }
+  ) {
     if (assignedUserId === actingUserId) return;
-    const [card, actor] = await Promise.all([CardModel.findById(cardId), UserModel.findById(actingUserId)]);
-    if (!card || !actor) return;
+    const [card, actor] = await Promise.all([
+      CardModel.findById(cardId),
+      actingUserId != null ? UserModel.findById(actingUserId) : Promise.resolve(null),
+    ]);
+    if (!card) return;
+    if (actingUserId != null && !actor) return;
+    const actorName = actor?.name ?? 'Uma automação';
+    let message = `${actorName} atribuiu você ao card "${card.title}".`;
+    if (task?.dueDate) message += ` Prazo: ${task.dueDate}.`;
+    if (task?.note) message += ` Observação: ${task.note}`;
     await NotificationModel.create({
       user_id: assignedUserId,
       type: 'card_assigned',
-      message: `${actor.name} atribuiu você ao card "${card.title}".`,
+      message,
       card_id: card.id,
       pipeline_id: card.pipeline_id,
     });
@@ -60,22 +75,35 @@ export const NotificationService = {
     const rows = await db('cards')
       .join('phases', 'phases.id', 'cards.current_phase_id')
       .join('pipelines', 'pipelines.id', 'cards.pipeline_id')
-      .whereNotNull('phases.sla_hours')
+      .where((qb) => qb.whereNotNull('phases.sla_hours').orWhereNotNull('cards.sla_override_hours'))
       .andWhere('pipelines.archived', false)
       .select<
-        { card_id: number; title: string; pipeline_id: number; current_phase_since: Date; sla_hours: number; phase_name: string }[]
+        {
+          card_id: number;
+          title: string;
+          pipeline_id: number;
+          current_phase_since: Date;
+          sla_hours: number | null;
+          sla_override_hours: number | null;
+          phase_id: number;
+          phase_name: string;
+        }[]
       >(
         'cards.id as card_id',
         'cards.title',
         'cards.pipeline_id',
         'cards.current_phase_since',
         'phases.sla_hours',
+        'cards.sla_override_hours',
+        'phases.id as phase_id',
         'phases.name as phase_name'
       );
 
     for (const row of rows) {
+      const effectiveSlaHours = row.sla_override_hours ?? row.sla_hours;
+      if (effectiveSlaHours == null) continue;
       const elapsedHours = (now - new Date(row.current_phase_since).getTime()) / 3600000;
-      if (elapsedHours <= row.sla_hours) continue;
+      if (elapsedHours <= effectiveSlaHours) continue;
 
       const already = await NotificationModel.existsForCardSinceType(
         row.card_id,
@@ -89,11 +117,17 @@ export const NotificationService = {
         await NotificationModel.create({
           user_id: assignee.user_id,
           type: 'sla_breached',
-          message: `O card "${row.title}" está há mais de ${row.sla_hours}h na fase "${row.phase_name}".`,
+          message: `O card "${row.title}" está há mais de ${effectiveSlaHours}h na fase "${row.phase_name}".`,
           card_id: row.card_id,
           pipeline_id: row.pipeline_id,
         });
       }
+
+      await AutomationService.runTriggers(
+        row.pipeline_id,
+        { type: 'sla_breached', cardId: row.card_id, phaseId: row.phase_id, slaHours: effectiveSlaHours },
+        null
+      ).catch((err) => logger.error({ err, cardId: row.card_id }, 'Falha ao disparar automações de SLA'));
     }
   },
 };

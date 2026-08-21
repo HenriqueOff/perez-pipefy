@@ -6,10 +6,13 @@ import {
   AutomationTriggerType,
   Card,
   CardAssignee,
+  CardConnectionsResponse,
   CardDetail,
   ChecklistItem,
   Comment,
   DashboardData,
+  EmailTemplate,
+  PipelineConnection,
   PublicFormInfo,
   CustomField,
   CustomFieldType,
@@ -19,6 +22,7 @@ import {
   PipelineDetail,
   PipelineMember,
   PipelineRole,
+  SearchCardResult,
 } from '../types';
 
 export const PipelinesApi = {
@@ -41,6 +45,8 @@ export const PipelinesApi = {
       is_final?: boolean;
       sla_hours?: number | null;
       wip_limit?: number | null;
+      min_move_in_role?: PipelineRole | null;
+      min_move_out_role?: PipelineRole | null;
     }
   ) => api.patch<Phase>(`/pipelines/${pipelineId}/phases/${phaseId}`, changes).then((r) => r.data),
 
@@ -50,14 +56,31 @@ export const PipelinesApi = {
   createCustomField: (
     pipelineId: number,
     phaseId: number,
-    input: { label: string; key: string; type: CustomFieldType; options?: string[]; required?: boolean }
+    input: {
+      label: string;
+      key: string;
+      type: CustomFieldType;
+      options?: string[];
+      formula?: string;
+      min_view_role?: PipelineRole | null;
+      min_edit_role?: PipelineRole | null;
+      required?: boolean;
+    }
   ) => api.post<CustomField>(`/pipelines/${pipelineId}/phases/${phaseId}/fields`, input).then((r) => r.data),
 
   updateCustomField: (
     pipelineId: number,
     phaseId: number,
     fieldId: number,
-    changes: { label?: string; options?: string[]; required?: boolean; position?: number }
+    changes: {
+      label?: string;
+      options?: string[];
+      formula?: string;
+      min_view_role?: PipelineRole | null;
+      min_edit_role?: PipelineRole | null;
+      required?: boolean;
+      position?: number;
+    }
   ) =>
     api
       .patch<CustomField>(`/pipelines/${pipelineId}/phases/${phaseId}/fields/${fieldId}`, changes)
@@ -118,6 +141,51 @@ export const PipelinesApi = {
 
   deleteAutomation: (pipelineId: number, automationId: number) =>
     api.delete(`/pipelines/${pipelineId}/automations/${automationId}`).then((r) => r.data),
+
+  listEmailTemplates: (pipelineId: number) =>
+    api.get<EmailTemplate[]>(`/pipelines/${pipelineId}/email-templates`).then((r) => r.data),
+
+  createEmailTemplate: (pipelineId: number, input: { name: string; subject: string; body_html: string }) =>
+    api.post<EmailTemplate>(`/pipelines/${pipelineId}/email-templates`, input).then((r) => r.data),
+
+  updateEmailTemplate: (
+    pipelineId: number,
+    templateId: number,
+    changes: { name?: string; subject?: string; body_html?: string }
+  ) => api.patch<EmailTemplate>(`/pipelines/${pipelineId}/email-templates/${templateId}`, changes).then((r) => r.data),
+
+  deleteEmailTemplate: (pipelineId: number, templateId: number) =>
+    api.delete(`/pipelines/${pipelineId}/email-templates/${templateId}`).then((r) => r.data),
+
+  listPipelineConnections: (pipelineId: number) =>
+    api
+      .get<{ asOwner: PipelineConnection[]; asTarget: PipelineConnection[] }>(`/pipelines/${pipelineId}/connections`)
+      .then((r) => r.data),
+
+  createPipelineConnection: (pipelineId: number, input: { target_pipeline_id: number; name: string }) =>
+    api.post<PipelineConnection>(`/pipelines/${pipelineId}/connections`, input).then((r) => r.data),
+
+  deletePipelineConnection: (pipelineId: number, connectionId: number) =>
+    api.delete(`/pipelines/${pipelineId}/connections/${connectionId}`).then((r) => r.data),
+
+  listCardConnections: (pipelineId: number, cardId: number) =>
+    api.get<CardConnectionsResponse>(`/pipelines/${pipelineId}/cards/${cardId}/connections`).then((r) => r.data),
+
+  attachCardConnection: (
+    pipelineId: number,
+    cardId: number,
+    input: { pipeline_connection_id: number; from_side: 'owner' | 'target'; other_card_id: number }
+  ) => api.post(`/pipelines/${pipelineId}/cards/${cardId}/connections`, input).then((r) => r.data),
+
+  detachCardConnection: (pipelineId: number, cardId: number, cardConnectionId: number) =>
+    api.delete(`/pipelines/${pipelineId}/cards/${cardId}/connections/${cardConnectionId}`).then((r) => r.data),
+
+  searchConnectableCards: (pipelineId: number, q: string, excludeCardIds: number[]) =>
+    api
+      .get<SearchCardResult[]>(`/pipelines/${pipelineId}/cards/search-connectable`, {
+        params: { q, exclude: excludeCardIds.join(',') },
+      })
+      .then((r) => r.data),
 
   getPublicFormInfo: (pipelineId: number) =>
     api.get<PublicFormInfo>(`/pipelines/${pipelineId}/public-form`).then((r) => r.data),

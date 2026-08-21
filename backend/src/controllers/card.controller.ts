@@ -1,13 +1,24 @@
 import { Request, Response } from 'express';
 import { CardService } from '../services/card.service';
+import { SearchService } from '../services/search.service';
 
 export const CardController = {
   async list(req: Request, res: Response) {
-    res.json(await CardService.listByPipeline(Number(req.params.pipelineId)));
+    res.json(await CardService.listByPipeline(Number(req.params.pipelineId), req.user!.id));
+  },
+
+  async searchConnectable(req: Request, res: Response) {
+    const query = typeof req.query.q === 'string' ? req.query.q : '';
+    const exclude = typeof req.query.exclude === 'string' ? req.query.exclude : '';
+    const excludeCardIds = exclude
+      .split(',')
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id));
+    res.json(await SearchService.searchCardsInPipeline(Number(req.params.pipelineId), query, excludeCardIds));
   },
 
   async detail(req: Request, res: Response) {
-    res.json(await CardService.getDetail(Number(req.params.cardId)));
+    res.json(await CardService.getDetail(Number(req.params.cardId), req.user!.id));
   },
 
   async create(req: Request, res: Response) {

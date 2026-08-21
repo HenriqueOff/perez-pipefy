@@ -70,6 +70,8 @@ export interface PhaseRow {
   is_final: boolean;
   sla_hours: number | null;
   wip_limit: number | null;
+  min_move_in_role: PipelineRole | null;
+  min_move_out_role: PipelineRole | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -81,6 +83,9 @@ export interface CustomFieldRow {
   key: string;
   type: CustomFieldType;
   options: string[] | null;
+  formula: string | null;
+  min_view_role: PipelineRole | null;
+  min_edit_role: PipelineRole | null;
   required: boolean;
   position: number;
   created_at: Date;
@@ -96,6 +101,7 @@ export interface CardRow {
   position: number;
   due_date: string | null;
   current_phase_since: Date;
+  sla_override_hours: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -104,6 +110,8 @@ export interface CardAssigneeRow {
   id: number;
   card_id: number;
   user_id: number;
+  due_date: string | null;
+  note: string | null;
   created_at: Date;
 }
 
@@ -118,7 +126,7 @@ export interface CardFieldValueRow {
 export interface CardHistoryRow {
   id: number;
   card_id: number;
-  user_id: number;
+  user_id: number | null;
   event_type: CardHistoryEventType;
   from_phase_id: number | null;
   to_phase_id: number | null;
@@ -198,6 +206,39 @@ export interface AutomationRow {
   active: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface EmailTemplateRow {
+  id: number;
+  pipeline_id: number;
+  name: string;
+  subject: string;
+  body_html: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PipelineConnectionRow {
+  id: number;
+  owner_pipeline_id: number;
+  target_pipeline_id: number;
+  name: string;
+  created_at: Date;
+}
+
+export interface CardConnectionRow {
+  id: number;
+  pipeline_connection_id: number;
+  owner_card_id: number;
+  target_card_id: number;
+  created_at: Date;
+}
+
+export interface AutomationRecurrenceRow {
+  id: number;
+  automation_id: number;
+  card_id: number;
+  last_fired_at: Date;
 }
 
 export interface NotificationRow {

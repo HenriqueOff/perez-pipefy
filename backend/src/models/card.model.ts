@@ -32,7 +32,12 @@ export const CardModel = {
 
   update(
     id: number,
-    changes: Partial<Pick<CardRow, 'title' | 'due_date' | 'position' | 'current_phase_id' | 'current_phase_since'>>
+    changes: Partial<
+      Pick<
+        CardRow,
+        'title' | 'due_date' | 'position' | 'current_phase_id' | 'current_phase_since' | 'sla_override_hours'
+      >
+    >
   ) {
     return db<CardRow>(TABLE)
       .where({ id })
