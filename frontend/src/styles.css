@@ -513,6 +513,20 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.topbar-profile-link {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-text);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.topbar-profile-link:hover {
+  background: var(--color-surface-2);
+}
+
 /* ---------- Notifications ---------- */
 
 .notification-bell {
@@ -637,6 +651,49 @@ textarea:focus {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+/* ---------- Perfil ---------- */
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.profile-summary strong {
+  font-size: 16px;
+}
+
+.settings-card {
+  max-width: 420px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.settings-card .section-title {
+  margin: 0 0 12px;
+}
+
+.stacked-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stacked-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.stacked-form button {
+  align-self: flex-start;
 }
 
 /* ---------- Pipelines grid ---------- */

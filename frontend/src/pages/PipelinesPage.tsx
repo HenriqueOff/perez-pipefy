@@ -56,7 +56,12 @@ function describeActivity(a: RecentActivityItem): string {
 export default function PipelinesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: overview, isLoading } = useQuery({ queryKey: ['pipelines-overview'], queryFn: PipelinesApi.overview });
+  const {
+    data: overview,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({ queryKey: ['pipelines-overview'], queryFn: PipelinesApi.overview });
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -104,6 +109,14 @@ export default function PipelinesPage() {
       )}
 
       {isLoading && <p>Carregando...</p>}
+      {isError && (
+        <p className="error">
+          Não foi possível carregar seus pipelines.{' '}
+          <button className="link-button" onClick={() => refetch()}>
+            Tentar de novo
+          </button>
+        </p>
+      )}
 
       <div className="pipeline-grid">
         {pipelines.map((pipeline) => {
@@ -134,7 +147,7 @@ export default function PipelinesPage() {
             </Link>
           );
         })}
-        {!isLoading && pipelines.length === 0 && <p>Nenhum pipeline ainda. Crie o primeiro acima.</p>}
+        {!isLoading && !isError && pipelines.length === 0 && <p>Nenhum pipeline ainda. Crie o primeiro acima.</p>}
       </div>
 
       {recentActivity.length > 0 && (

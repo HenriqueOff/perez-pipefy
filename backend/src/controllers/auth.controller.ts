@@ -58,6 +58,11 @@ export const AuthController = {
     res.json({ id: user.id, name: user.name, email: user.email, role: user.global_role });
   },
 
+  async updateMe(req: Request, res: Response) {
+    const user = await UserModel.update(req.user!.id, { name: req.body.name });
+    res.json({ id: user.id, name: user.name, email: user.email, role: user.global_role });
+  },
+
   async changePassword(req: Request, res: Response) {
     const { currentPassword, newPassword } = req.body;
     await AuthService.changePassword(req.user!.id, currentPassword, newPassword);

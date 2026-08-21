@@ -10,6 +10,10 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(1),
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email(),
 });

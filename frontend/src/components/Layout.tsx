@@ -60,8 +60,10 @@ export default function Layout() {
           <GlobalSearch />
           <div className="header-right">
             <NotificationBell />
-            {user && <Avatar name={user.name} size={28} />}
-            <span>{user?.name}</span>
+            <Link to="/profile" className="topbar-profile-link">
+              {user && <Avatar name={user.name} size={28} />}
+              <span>{user?.name}</span>
+            </Link>
             <button className="secondary-button" onClick={() => logout()}>
               Sair
             </button>
