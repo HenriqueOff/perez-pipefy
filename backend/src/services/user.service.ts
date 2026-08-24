@@ -30,10 +30,16 @@ export const UserService = {
     return sanitize(user);
   },
 
-  async update(id: number, changes: { name?: string; global_role?: GlobalRole; active?: boolean }) {
+  async update(id: number, changes: { name?: string; email?: string; global_role?: GlobalRole; active?: boolean }) {
     const user = await UserModel.findById(id);
     if (!user) {
       throw AppError.notFound('Usuário não encontrado');
+    }
+    if (changes.email && changes.email !== user.email) {
+      const existing = await UserModel.findByEmail(changes.email);
+      if (existing) {
+        throw AppError.conflict('Já existe um usuário com este e-mail');
+      }
     }
     const updated = await UserModel.update(id, changes);
     return sanitize(updated);

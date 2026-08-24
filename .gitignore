@@ -16,3 +16,7 @@ uploads/
 
 # Preferências locais do Claude Code (por máquina, não compartilhado no repo)
 .claude/settings.local.json
+
+# Log de vínculos gerado em tempo de execução pelo importador do Pipefy (dados de
+# produção, não código) — ver backend/scripts/pipefy/importCards.ts
+backend/scripts/pipefy/connector-links.jsonl

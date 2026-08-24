@@ -31,7 +31,7 @@ export const UserModel = {
       .then((rows) => rows[0]);
   },
 
-  update(id: number, changes: Partial<Pick<UserRow, 'name' | 'global_role' | 'active'>>) {
+  update(id: number, changes: Partial<Pick<UserRow, 'name' | 'email' | 'global_role' | 'active'>>) {
     return db<UserRow>(TABLE)
       .where({ id })
       .update({ ...changes, updated_at: db.fn.now() })
