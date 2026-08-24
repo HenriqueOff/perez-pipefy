@@ -12,11 +12,13 @@ export const AutomationController = {
   },
 
   async update(req: Request, res: Response) {
-    res.json(await AutomationService.update(Number(req.params.automationId), req.body));
+    res.json(
+      await AutomationService.update(Number(req.params.automationId), Number(req.params.pipelineId), req.body)
+    );
   },
 
   async remove(req: Request, res: Response) {
-    await AutomationService.delete(Number(req.params.automationId));
+    await AutomationService.delete(Number(req.params.automationId), Number(req.params.pipelineId));
     res.status(204).send();
   },
 };

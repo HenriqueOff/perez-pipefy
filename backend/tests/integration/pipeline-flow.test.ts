@@ -16,6 +16,12 @@ describe('fluxo completo de pipeline', () => {
   let cardId: number;
 
   afterAll(async () => {
+    // Sem isso, cada execução deixa um pipeline "Captação de imóveis - teste" órfão no
+    // banco (não há DB efêmera/dedicada de teste) — acumular esse lixo entre rodadas é
+    // uma causa comum de resultados inconsistentes ao rodar a suíte repetidas vezes.
+    if (pipelineId) {
+      await db('pipelines').where({ id: pipelineId }).del();
+    }
     await db.destroy();
   });
 

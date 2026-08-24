@@ -18,7 +18,7 @@ export const CardController = {
   },
 
   async detail(req: Request, res: Response) {
-    res.json(await CardService.getDetail(Number(req.params.cardId), req.user!.id));
+    res.json(await CardService.getDetail(Number(req.params.cardId), Number(req.params.pipelineId), req.user!.id));
   },
 
   async create(req: Request, res: Response) {
@@ -27,7 +27,9 @@ export const CardController = {
   },
 
   async update(req: Request, res: Response) {
-    res.json(await CardService.update(Number(req.params.cardId), req.user!.id, req.body));
+    res.json(
+      await CardService.update(Number(req.params.cardId), Number(req.params.pipelineId), req.user!.id, req.body)
+    );
   },
 
   async move(req: Request, res: Response) {
@@ -40,13 +42,19 @@ export const CardController = {
   },
 
   async addAssignee(req: Request, res: Response) {
-    const assignees = await CardService.addAssignee(Number(req.params.cardId), req.body.user_id, req.user!.id);
+    const assignees = await CardService.addAssignee(
+      Number(req.params.cardId),
+      Number(req.params.pipelineId),
+      req.body.user_id,
+      req.user!.id
+    );
     res.status(201).json(assignees);
   },
 
   async removeAssignee(req: Request, res: Response) {
     const assignees = await CardService.removeAssignee(
       Number(req.params.cardId),
+      Number(req.params.pipelineId),
       Number(req.params.userId),
       req.user!.id
     );
@@ -54,7 +62,7 @@ export const CardController = {
   },
 
   async remove(req: Request, res: Response) {
-    await CardService.delete(Number(req.params.cardId));
+    await CardService.delete(Number(req.params.cardId), Number(req.params.pipelineId));
     res.status(204).send();
   },
 };

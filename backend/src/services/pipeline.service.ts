@@ -152,6 +152,14 @@ export const PipelineService = {
     return PhaseModel.update(phaseId, changes);
   },
 
+  async setPhaseManualCardCreation(phaseId: number, allow: boolean) {
+    const phase = await PhaseModel.findById(phaseId);
+    if (!phase) {
+      throw AppError.notFound('Fase não encontrada');
+    }
+    return PhaseModel.setAllowManualCardCreation(phaseId, allow);
+  },
+
   async deletePhase(phaseId: number) {
     const phase = await PhaseModel.findById(phaseId);
     if (!phase) {

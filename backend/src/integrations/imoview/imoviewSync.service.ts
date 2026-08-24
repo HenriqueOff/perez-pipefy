@@ -4,6 +4,7 @@ import { IntegrationConfigModel } from '../../models/integrationConfig.model';
 import { CardService } from '../../services/card.service';
 import { AppError } from '../../utils/AppError';
 import { decrypt } from '../../utils/crypto';
+import { resolveActorRole, roleAtLeast } from '../../utils/pipelineRole';
 import { ImoviewClient } from './imoviewClient';
 import { toCardSeed } from './imoviewAdapter';
 import { ImoviewEntityType } from './types';
@@ -21,6 +22,16 @@ export const ImoviewSyncService = {
     phaseId?: number;
     userId: number;
   }) {
+    // A rota (POST /integrations/imoview/import-card) não é aninhada sob /pipelines/:pipelineId,
+    // então requirePipelineRole não se aplica a ela — sem esta checagem, qualquer usuário
+    // autenticado (mesmo sem nenhum vínculo com o pipeline) conseguia importar cards em
+    // qualquer pipeline só informando o pipeline_id no body. Mesmo nível mínimo exigido pela
+    // criação manual de card (POST /pipelines/:id/cards, requirePipelineRole('editor')).
+    const actorRole = await resolveActorRole(input.pipelineId, input.userId);
+    if (!roleAtLeast(actorRole, 'editor')) {
+      throw AppError.forbidden('Você não tem permissão para importar cards neste pipeline');
+    }
+
     const config = await IntegrationConfigModel.findByProvider('imoview');
     if (!config) {
       throw new AppError('Integração com o Imoview ainda não foi configurada', 422);

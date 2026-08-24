@@ -31,6 +31,14 @@ export const PhaseModel = {
       .then((rows) => rows[0]);
   },
 
+  setAllowManualCardCreation(id: number, allow: boolean) {
+    return db<PhaseRow>(TABLE)
+      .where({ id })
+      .update({ allow_manual_card_creation: allow, updated_at: db.fn.now() })
+      .returning('*')
+      .then((rows) => rows[0]);
+  },
+
   update(
     id: number,
     changes: Partial<

@@ -65,6 +65,7 @@ export interface Phase {
   wip_limit: number | null;
   min_move_in_role: PipelineRole | null;
   min_move_out_role: PipelineRole | null;
+  allow_manual_card_creation: boolean;
   customFields: CustomField[];
 }
 
@@ -167,9 +168,11 @@ export interface AdminUser {
   id: number;
   name: string;
   email: string;
-  global_role: GlobalRole;
-  active: boolean;
-  created_at: string;
+  // Só vêm preenchidos quando quem pediu a lista é admin (GET /users retorna um
+  // conjunto reduzido de campos pra quem não é, ex. seletor de responsável).
+  global_role?: GlobalRole;
+  active?: boolean;
+  created_at?: string;
 }
 
 export type AutomationTriggerType =

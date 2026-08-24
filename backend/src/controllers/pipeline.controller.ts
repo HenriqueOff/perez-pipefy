@@ -56,6 +56,11 @@ export const PipelineController = {
     res.json(await PipelineService.updatePhase(Number(req.params.phaseId), req.body));
   },
 
+  async setPhaseManualCardCreation(req: Request, res: Response) {
+    const phase = await PipelineService.setPhaseManualCardCreation(Number(req.params.phaseId), req.body.allow);
+    res.json(phase);
+  },
+
   async deletePhase(req: Request, res: Response) {
     await PipelineService.deletePhase(Number(req.params.phaseId));
     res.status(204).send();

@@ -1,7 +1,8 @@
 import { LabelModel } from '../models/label.model';
-import { CardModel } from '../models/card.model';
 import { PipelineModel } from '../models/pipeline.model';
 import { AppError } from '../utils/AppError';
+import { assertCardInPipeline } from '../utils/assertOwnership';
+import { sanitizeText } from '../utils/sanitizeText';
 
 export const LabelService = {
   listByPipeline(pipelineId: number) {
@@ -13,17 +14,28 @@ export const LabelService = {
     if (!pipeline) {
       throw AppError.notFound('Pipeline não encontrado');
     }
+    const name = await sanitizeText(input.name);
+    if (!name) {
+      throw new AppError('Nome da etiqueta não pode ficar vazio', 422);
+    }
     const existing = await LabelModel.listByPipeline(pipelineId);
-    if (existing.some((l) => l.name.toLowerCase() === input.name.toLowerCase())) {
+    if (existing.some((l) => l.name.toLowerCase() === name.toLowerCase())) {
       throw AppError.conflict('Já existe uma etiqueta com este nome neste pipeline');
     }
-    return LabelModel.create({ pipeline_id: pipelineId, name: input.name, color: input.color });
+    return LabelModel.create({ pipeline_id: pipelineId, name, color: input.color });
   },
 
-  async update(labelId: number, changes: { name?: string; color?: string }) {
+  async update(labelId: number, pipelineId: number, changes: { name?: string; color?: string }) {
     const label = await LabelModel.findById(labelId);
-    if (!label) {
+    if (!label || label.pipeline_id !== pipelineId) {
       throw AppError.notFound('Etiqueta não encontrada');
+    }
+    if (changes.name !== undefined) {
+      const name = await sanitizeText(changes.name);
+      if (!name) {
+        throw new AppError('Nome da etiqueta não pode ficar vazio', 422);
+      }
+      changes = { ...changes, name };
     }
     if (changes.name && changes.name.toLowerCase() !== label.name.toLowerCase()) {
       const existing = await LabelModel.listByPipeline(label.pipeline_id);
@@ -34,19 +46,17 @@ export const LabelService = {
     return LabelModel.update(labelId, changes);
   },
 
-  async delete(labelId: number) {
+  async delete(labelId: number, pipelineId: number) {
     const label = await LabelModel.findById(labelId);
-    if (!label) {
+    if (!label || label.pipeline_id !== pipelineId) {
       throw AppError.notFound('Etiqueta não encontrada');
     }
     return LabelModel.delete(labelId);
   },
 
-  async attachToCard(cardId: number, labelId: number) {
-    const [card, label] = await Promise.all([CardModel.findById(cardId), LabelModel.findById(labelId)]);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async attachToCard(cardId: number, pipelineId: number, labelId: number) {
+    const card = await assertCardInPipeline(cardId, pipelineId);
+    const label = await LabelModel.findById(labelId);
     if (!label || label.pipeline_id !== card.pipeline_id) {
       throw AppError.notFound('Etiqueta não encontrada neste pipeline');
     }
@@ -54,7 +64,12 @@ export const LabelService = {
     return LabelModel.listByCard(cardId);
   },
 
-  async detachFromCard(cardId: number, labelId: number) {
+  async detachFromCard(cardId: number, pipelineId: number, labelId: number) {
+    const card = await assertCardInPipeline(cardId, pipelineId);
+    const label = await LabelModel.findById(labelId);
+    if (!label || label.pipeline_id !== card.pipeline_id) {
+      throw AppError.notFound('Etiqueta não encontrada neste pipeline');
+    }
     await LabelModel.detachFromCard(cardId, labelId);
     return LabelModel.listByCard(cardId);
   },

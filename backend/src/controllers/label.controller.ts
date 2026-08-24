@@ -12,21 +12,29 @@ export const LabelController = {
   },
 
   async update(req: Request, res: Response) {
-    res.json(await LabelService.update(Number(req.params.labelId), req.body));
+    res.json(await LabelService.update(Number(req.params.labelId), Number(req.params.pipelineId), req.body));
   },
 
   async remove(req: Request, res: Response) {
-    await LabelService.delete(Number(req.params.labelId));
+    await LabelService.delete(Number(req.params.labelId), Number(req.params.pipelineId));
     res.status(204).send();
   },
 
   async attach(req: Request, res: Response) {
-    const labels = await LabelService.attachToCard(Number(req.params.cardId), req.body.label_id);
+    const labels = await LabelService.attachToCard(
+      Number(req.params.cardId),
+      Number(req.params.pipelineId),
+      req.body.label_id
+    );
     res.status(201).json(labels);
   },
 
   async detach(req: Request, res: Response) {
-    const labels = await LabelService.detachFromCard(Number(req.params.cardId), Number(req.params.labelId));
+    const labels = await LabelService.detachFromCard(
+      Number(req.params.cardId),
+      Number(req.params.pipelineId),
+      Number(req.params.labelId)
+    );
     res.json(labels);
   },
 };

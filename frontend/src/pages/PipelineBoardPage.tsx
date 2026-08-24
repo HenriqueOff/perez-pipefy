@@ -15,6 +15,7 @@ import ConnectionsModal from '../components/ConnectionsModal';
 import PublicFormModal from '../components/PublicFormModal';
 import CardsTableView from '../components/CardsTableView';
 import DashboardView from '../components/DashboardView';
+import Tooltip from '../components/Tooltip';
 
 export default function PipelineBoardPage() {
   const { pipelineId } = useParams();
@@ -52,6 +53,7 @@ export default function PipelineBoardPage() {
   const canManagePhases = canManageMembers;
   const canEdit = user?.role === 'admin' || (!!currentMembership && currentMembership.pipeline_role !== 'viewer');
   const userRole: PipelineRole = user?.role === 'admin' ? 'owner' : currentMembership?.pipeline_role ?? 'viewer';
+  const isGlobalAdmin = user?.role === 'admin';
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -235,10 +237,16 @@ export default function PipelineBoardPage() {
                   />
                   <button type="submit">Adicionar</button>
                 </form>
-              ) : (
+              ) : phase.allow_manual_card_creation ? (
                 <button className="add-card-button" onClick={() => setAddingCardForPhase(phase.id)}>
                   + Novo card
                 </button>
+              ) : (
+                <Tooltip label="Criação manual desativada nesta fase (cards entram por automação)">
+                  <button className="add-card-button add-card-button-disabled" disabled>
+                    + Novo card
+                  </button>
+                </Tooltip>
               )}
             </div>
           ))}
@@ -297,6 +305,7 @@ export default function PipelineBoardPage() {
         <PhaseSettingsModal
           pipelineId={id}
           phase={pipeline.phases.find((p) => p.id === settingsPhaseId)!}
+          isGlobalAdmin={isGlobalAdmin}
           onClose={() => setSettingsPhaseId(null)}
         />
       )}

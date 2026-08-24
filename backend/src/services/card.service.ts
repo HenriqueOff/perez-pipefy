@@ -16,6 +16,8 @@ import { AppError } from '../utils/AppError';
 import { requiredFieldsMissing, validateFieldValue } from '../utils/fieldValidation';
 import { logger } from '../utils/logger';
 import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
+import { assertCardInPipeline } from '../utils/assertOwnership';
+import { sanitizeText } from '../utils/sanitizeText';
 import { TriggerContext } from './automation.service';
 
 // Recalcular fórmulas nunca deve derrubar a operação que motivou a mudança de campo.
@@ -130,11 +132,8 @@ export const CardService = {
     );
   },
 
-  async getDetail(cardId: number, userId: number) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async getDetail(cardId: number, pipelineId: number, userId: number) {
+    const card = await assertCardInPipeline(cardId, pipelineId);
     const [fieldValues, history, labels, assignees, checklist, actorRole, allFields] = await Promise.all([
       CardFieldValueModel.listByCard(card.id),
       CardHistoryModel.listByCard(card.id),
@@ -164,11 +163,20 @@ export const CardService = {
       assignee_ids?: number[];
       due_date?: string | null;
       fields?: Record<string, unknown>;
-    }
+    },
+    options: { enforceManualCreationFlag?: boolean } = {}
   ) {
+    const { enforceManualCreationFlag = true } = options;
+    const title = await sanitizeText(input.title);
+    if (!title) {
+      throw new AppError('Título do card não pode ficar vazio', 422);
+    }
     const phase = input.phase_id ? await PhaseModel.findById(input.phase_id) : await getFirstPhase(pipelineId);
     if (!phase || phase.pipeline_id !== pipelineId) {
       throw new AppError('Fase inválida para este pipeline', 422);
+    }
+    if (enforceManualCreationFlag && !phase.allow_manual_card_creation) {
+      throw AppError.forbidden('Criação manual de card desativada nesta fase');
     }
     const actorRole = await resolveActorRole(pipelineId, userId);
 
@@ -181,7 +189,7 @@ export const CardService = {
         .insert({
           pipeline_id: pipelineId,
           current_phase_id: phase.id,
-          title: input.title,
+          title,
           created_by: userId,
           due_date: input.due_date ?? null,
           position: Number(count),
@@ -212,20 +220,27 @@ export const CardService = {
     return card;
   },
 
-  async update(cardId: number, _userId: number, changes: { title?: string; due_date?: string | null }) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
+  async update(
+    cardId: number,
+    pipelineId: number,
+    _userId: number,
+    changes: { title?: string; due_date?: string | null }
+  ) {
+    await assertCardInPipeline(cardId, pipelineId);
+
+    if (changes.title !== undefined) {
+      const title = await sanitizeText(changes.title);
+      if (!title) {
+        throw new AppError('Título do card não pode ficar vazio', 422);
+      }
+      changes = { ...changes, title };
     }
 
     return CardModel.update(cardId, changes);
   },
 
-  async addAssignee(cardId: number, userId: number, actingUserId: number) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async addAssignee(cardId: number, pipelineId: number, userId: number, actingUserId: number) {
+    await assertCardInPipeline(cardId, pipelineId);
     await CardAssigneeModel.attach(cardId, userId);
     await CardHistoryModel.record({
       card_id: cardId,
@@ -238,11 +253,8 @@ export const CardService = {
     return CardAssigneeModel.listByCard(cardId);
   },
 
-  async removeAssignee(cardId: number, userId: number, actingUserId: number) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async removeAssignee(cardId: number, pipelineId: number, userId: number, actingUserId: number) {
+    await assertCardInPipeline(cardId, pipelineId);
     await CardAssigneeModel.detach(cardId, userId);
     await CardHistoryModel.record({
       card_id: cardId,
@@ -349,11 +361,8 @@ export const CardService = {
     return CardFieldValueModel.listByCard(cardId);
   },
 
-  async delete(cardId: number) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async delete(cardId: number, pipelineId: number) {
+    await assertCardInPipeline(cardId, pipelineId);
     return CardModel.delete(cardId);
   },
 };

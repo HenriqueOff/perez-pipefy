@@ -42,6 +42,10 @@ export const updatePhaseSchema = z.object({
   min_move_out_role: roleSchema.nullable().optional(),
 });
 
+export const setPhaseManualCardCreationSchema = z.object({
+  allow: z.boolean(),
+});
+
 export const createCustomFieldSchema = z.object({
   label: z.string().min(1).max(150),
   key: z

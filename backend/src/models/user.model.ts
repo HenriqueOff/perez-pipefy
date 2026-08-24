@@ -24,6 +24,13 @@ export const UserModel = {
     return db<UserRow>(TABLE).select('id', 'name', 'email', 'global_role', 'active', 'created_at').orderBy('name');
   },
 
+  // Usada quando quem pede não é admin (ex.: seletor de responsável/membro de pipeline):
+  // não expõe global_role/active/created_at, que revelam a estrutura de privilégios do
+  // sistema (quem é admin, quem está desativado) sem necessidade nenhuma pra esse uso.
+  listBasic() {
+    return db<UserRow>(TABLE).where({ active: true }).select('id', 'name', 'email').orderBy('name');
+  },
+
   create(input: CreateUserInput) {
     return db<UserRow>(TABLE)
       .insert({ ...input, global_role: input.global_role ?? 'member' })

@@ -1,19 +1,22 @@
 import { db } from '../config/db';
-import { CardModel } from '../models/card.model';
 import { CardHistoryModel } from '../models/cardHistory.model';
 import { CommentModel } from '../models/comment.model';
 import { AppError } from '../utils/AppError';
+import { assertCardInPipeline } from '../utils/assertOwnership';
+import { sanitizeText } from '../utils/sanitizeText';
 import { NotificationService } from './notification.service';
 
 export const CommentService = {
-  listByCard(cardId: number) {
+  async listByCard(cardId: number, pipelineId: number) {
+    await assertCardInPipeline(cardId, pipelineId);
     return CommentModel.listByCard(cardId);
   },
 
-  async create(cardId: number, userId: number, body: string) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
+  async create(cardId: number, pipelineId: number, userId: number, rawBody: string) {
+    await assertCardInPipeline(cardId, pipelineId);
+    const body = await sanitizeText(rawBody);
+    if (!body) {
+      throw new AppError('Comentário não pode ficar vazio', 422);
     }
 
     const comment = await db.transaction(async (trx) => {
@@ -29,11 +32,12 @@ export const CommentService = {
     return comment;
   },
 
-  async delete(commentId: number, userId: number, isAdmin: boolean) {
+  async delete(commentId: number, pipelineId: number, userId: number, isAdmin: boolean) {
     const comment = await CommentModel.findById(commentId);
     if (!comment) {
       throw AppError.notFound('Comentário não encontrado');
     }
+    await assertCardInPipeline(comment.card_id, pipelineId);
     if (comment.user_id !== userId && !isAdmin) {
       throw AppError.forbidden('Você só pode excluir seus próprios comentários');
     }

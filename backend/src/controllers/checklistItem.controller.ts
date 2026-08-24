@@ -3,20 +3,24 @@ import { ChecklistItemService } from '../services/checklistItem.service';
 
 export const ChecklistItemController = {
   async list(req: Request, res: Response) {
-    res.json(await ChecklistItemService.listByCard(Number(req.params.cardId)));
+    res.json(await ChecklistItemService.listByCard(Number(req.params.cardId), Number(req.params.pipelineId)));
   },
 
   async create(req: Request, res: Response) {
-    const item = await ChecklistItemService.create(Number(req.params.cardId), req.body.title);
+    const item = await ChecklistItemService.create(
+      Number(req.params.cardId),
+      Number(req.params.pipelineId),
+      req.body.title
+    );
     res.status(201).json(item);
   },
 
   async update(req: Request, res: Response) {
-    res.json(await ChecklistItemService.update(Number(req.params.itemId), req.body));
+    res.json(await ChecklistItemService.update(Number(req.params.itemId), Number(req.params.pipelineId), req.body));
   },
 
   async remove(req: Request, res: Response) {
-    await ChecklistItemService.delete(Number(req.params.itemId));
+    await ChecklistItemService.delete(Number(req.params.itemId), Number(req.params.pipelineId));
     res.status(204).send();
   },
 };

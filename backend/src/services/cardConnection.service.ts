@@ -2,6 +2,7 @@ import { CardConnectionModel, ConnectedCardRow } from '../models/cardConnection.
 import { CardModel } from '../models/card.model';
 import { PipelineConnectionModel } from '../models/pipelineConnection.model';
 import { AppError } from '../utils/AppError';
+import { assertCardInPipeline } from '../utils/assertOwnership';
 
 function groupByConnection(rows: ConnectedCardRow[]): Map<number, ConnectedCardRow[]> {
   const map = new Map<number, ConnectedCardRow[]>();
@@ -14,11 +15,8 @@ function groupByConnection(rows: ConnectedCardRow[]): Map<number, ConnectedCardR
 }
 
 export const CardConnectionService = {
-  async listForCard(cardId: number) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async listForCard(cardId: number, pipelineId: number) {
+    const card = await assertCardInPipeline(cardId, pipelineId);
 
     const [ownerConnections, targetConnections, ownerCards, targetCards] = await Promise.all([
       PipelineConnectionModel.listByOwnerPipeline(card.pipeline_id),
@@ -42,11 +40,12 @@ export const CardConnectionService = {
     };
   },
 
-  async attach(cardId: number, input: { pipeline_connection_id: number; from_side: 'owner' | 'target'; other_card_id: number }) {
-    const card = await CardModel.findById(cardId);
-    if (!card) {
-      throw AppError.notFound('Card não encontrado');
-    }
+  async attach(
+    cardId: number,
+    pipelineId: number,
+    input: { pipeline_connection_id: number; from_side: 'owner' | 'target'; other_card_id: number }
+  ) {
+    const card = await assertCardInPipeline(cardId, pipelineId);
     const connection = await PipelineConnectionModel.findById(input.pipeline_connection_id);
     if (!connection) {
       throw AppError.notFound('Conexão não encontrada');
@@ -81,7 +80,8 @@ export const CardConnectionService = {
     });
   },
 
-  async detach(cardConnectionId: number, cardId: number) {
+  async detach(cardConnectionId: number, cardId: number, pipelineId: number) {
+    await assertCardInPipeline(cardId, pipelineId);
     const cardConnection = await CardConnectionModel.findById(cardConnectionId);
     if (!cardConnection || (cardConnection.owner_card_id !== cardId && cardConnection.target_card_id !== cardId)) {
       throw AppError.notFound('Conexão de card não encontrada');

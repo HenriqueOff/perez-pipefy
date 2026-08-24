@@ -15,17 +15,21 @@ export const EmailTemplateService = {
     return EmailTemplateModel.create({ pipeline_id: pipelineId, ...input });
   },
 
-  async update(templateId: number, changes: { name?: string; subject?: string; body_html?: string }) {
+  async update(
+    templateId: number,
+    pipelineId: number,
+    changes: { name?: string; subject?: string; body_html?: string }
+  ) {
     const template = await EmailTemplateModel.findById(templateId);
-    if (!template) {
+    if (!template || template.pipeline_id !== pipelineId) {
       throw AppError.notFound('Modelo de e-mail não encontrado');
     }
     return EmailTemplateModel.update(templateId, changes);
   },
 
-  async delete(templateId: number) {
+  async delete(templateId: number, pipelineId: number) {
     const template = await EmailTemplateModel.findById(templateId);
-    if (!template) {
+    if (!template || template.pipeline_id !== pipelineId) {
       throw AppError.notFound('Modelo de e-mail não encontrado');
     }
     return EmailTemplateModel.delete(templateId);

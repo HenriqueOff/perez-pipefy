@@ -72,6 +72,7 @@ export interface PhaseRow {
   wip_limit: number | null;
   min_move_in_role: PipelineRole | null;
   min_move_out_role: PipelineRole | null;
+  allow_manual_card_creation: boolean;
   created_at: Date;
   updated_at: Date;
 }

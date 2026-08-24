@@ -26,13 +26,23 @@ function isPrivateIPv6(ip: string): boolean {
   return false;
 }
 
+export interface PinnedAddress {
+  address: string;
+  family: 4 | 6;
+}
+
 /**
- * Guarda simples contra SSRF pra ação de automação "faça uma requisição HTTP": o autor
- * da automação já é um usuário de confiança (requirePipelineRole('manager')), então isso
- * não é defesa contra DNS rebinding avançado — só evita que uma URL interna colada por
- * engano (ou um valor interpolado de um campo) faça a automação bater na rede interna.
+ * Guarda contra SSRF pra ação de automação "faça uma requisição HTTP": o autor da
+ * automação já é um usuário de confiança (requirePipelineRole('manager')), então isso não
+ * é uma allowlist rígida — só evita que uma URL interna colada por engano (ou um valor
+ * interpolado de um campo) faça a automação bater na rede interna.
+ *
+ * Resolve o DNS e valida TODOS os endereços retornados, mas devolve só o primeiro como
+ * "pinned": quem chama deve usá-lo para a conexão de verdade (em vez de deixar a lib HTTP
+ * resolver de novo), senão essa validação vira só decoração — um DNS malicioso poderia
+ * responder um IP público aqui e um IP interno na hora da conexão real (DNS rebinding).
  */
-export async function assertPublicUrl(rawUrl: string): Promise<void> {
+export async function resolvePinnedAddress(rawUrl: string): Promise<{ url: URL; pinned: PinnedAddress }> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -53,4 +63,12 @@ export async function assertPublicUrl(rawUrl: string): Promise<void> {
       throw new AppError(`URL aponta para um endereço de rede interno: "${url.hostname}"`, 422);
     }
   }
+
+  const [{ address, family }] = addresses;
+  return { url, pinned: { address, family: family as 4 | 6 } };
+}
+
+/** Mantido para quem só precisa validar (ex. testes) sem fixar o endereço numa conexão. */
+export async function assertPublicUrl(rawUrl: string): Promise<void> {
+  await resolvePinnedAddress(rawUrl);
 }

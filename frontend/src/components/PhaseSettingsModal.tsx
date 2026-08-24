@@ -68,10 +68,11 @@ function slugify(label: string): string {
 interface Props {
   pipelineId: number;
   phase: Phase;
+  isGlobalAdmin: boolean;
   onClose: () => void;
 }
 
-export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props) {
+export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, onClose }: Props) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
@@ -108,6 +109,18 @@ export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setError(message ?? 'Não foi possível salvar a fase');
+    },
+  });
+
+  const manualCardCreationMutation = useMutation({
+    mutationFn: (allow: boolean) => PipelinesApi.setPhaseManualCardCreation(pipelineId, phase.id, allow),
+    onSuccess: () => {
+      setError(null);
+      invalidate();
+    },
+    onError: (err: unknown) => {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setError(message ?? 'Não foi possível salvar essa configuração');
     },
   });
 
@@ -203,6 +216,26 @@ export default function PhaseSettingsModal({ pipelineId, phase, onClose }: Props
               </button>
             </div>
           </form>
+
+          {isGlobalAdmin && (
+            <>
+              <hr className="div" />
+              <div className="admin-only-setting">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={phase.allow_manual_card_creation}
+                    onChange={(e) => manualCardCreationMutation.mutate(e.target.checked)}
+                  />
+                  Permitir criar card manualmente nesta fase
+                </label>
+                <p className="muted">
+                  Só admins veem esta opção. Desative em fases alimentadas só por automação/formulário — o botão "+
+                  Novo card" continua aparecendo pros usuários, mas fica desativado.
+                </p>
+              </div>
+            </>
+          )}
 
           <hr className="div" />
 

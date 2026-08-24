@@ -108,6 +108,14 @@ export const PublicFormService = {
 
     // atribuído a quem criou o pipeline: não existe um usuário "anônimo" no schema
     // e card_history/cards.created_by exigem um usuário válido.
-    return CardService.create(pipeline.id, pipeline.created_by, { title: input.title, fields: filteredFields });
+    // enforceManualCreationFlag: false — a trava "criar card manualmente" é sobre o botão
+    // "+ Novo card" no board; submissão via formulário público é justamente um dos fluxos
+    // que essa trava existe para preservar (ver migration 20260824090000).
+    return CardService.create(
+      pipeline.id,
+      pipeline.created_by,
+      { title: input.title, fields: filteredFields },
+      { enforceManualCreationFlag: false }
+    );
   },
 };

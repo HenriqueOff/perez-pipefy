@@ -12,11 +12,13 @@ export const EmailTemplateController = {
   },
 
   async update(req: Request, res: Response) {
-    res.json(await EmailTemplateService.update(Number(req.params.templateId), req.body));
+    res.json(
+      await EmailTemplateService.update(Number(req.params.templateId), Number(req.params.pipelineId), req.body)
+    );
   },
 
   async remove(req: Request, res: Response) {
-    await EmailTemplateService.delete(Number(req.params.templateId));
+    await EmailTemplateService.delete(Number(req.params.templateId), Number(req.params.pipelineId));
     res.status(204).send();
   },
 };

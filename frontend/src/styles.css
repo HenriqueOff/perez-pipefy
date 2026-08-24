@@ -1055,6 +1055,14 @@ textarea:focus {
   color: var(--color-text);
 }
 
+.add-card-button-disabled,
+.add-card-button-disabled:hover {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: transparent;
+  color: var(--color-text-faint);
+}
+
 /* ---------- Modal ---------- */
 
 .modal-backdrop {
@@ -1362,6 +1370,19 @@ hr.div {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.admin-only-setting {
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+
+.admin-only-setting p {
+  margin: 6px 0 0;
+  font-size: 12px;
 }
 
 .checkbox-label {

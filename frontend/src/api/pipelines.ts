@@ -55,6 +55,9 @@ export const PipelinesApi = {
   deletePhase: (pipelineId: number, phaseId: number) =>
     api.delete(`/pipelines/${pipelineId}/phases/${phaseId}`).then((r) => r.data),
 
+  setPhaseManualCardCreation: (pipelineId: number, phaseId: number, allow: boolean) =>
+    api.patch<Phase>(`/pipelines/${pipelineId}/phases/${phaseId}/manual-card-creation`, { allow }).then((r) => r.data),
+
   createCustomField: (
     pipelineId: number,
     phaseId: number,

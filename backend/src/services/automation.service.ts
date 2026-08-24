@@ -1,4 +1,6 @@
 import axios from 'axios';
+import http from 'http';
+import https from 'https';
 import { db } from '../config/db';
 import { AutomationModel } from '../models/automation.model';
 import { AutomationRecurrenceModel } from '../models/automationRecurrence.model';
@@ -18,7 +20,7 @@ import { AutomationTriggerType } from '../types/enums';
 import { AppError } from '../utils/AppError';
 import { validateFieldValue } from '../utils/fieldValidation';
 import { evaluateFormula, parseFormula } from '../utils/formulaEvaluator';
-import { assertPublicUrl } from '../utils/ssrfGuard';
+import { resolvePinnedAddress } from '../utils/ssrfGuard';
 import { interpolateTemplate } from '../utils/templateInterpolation';
 import { wrapBrandedEmail } from '../utils/emailLayout';
 import { logger } from '../utils/logger';
@@ -404,16 +406,34 @@ async function httpRequestDirect(
   const body =
     method !== 'GET' && config.body ? interpolateTemplate(config.body, { title: card.title, fields: valuesByKey }) : undefined;
 
+  let pinned;
   try {
-    await assertPublicUrl(url);
+    ({ pinned } = await resolvePinnedAddress(url));
   } catch (err) {
     logger.warn({ err, cardId, url }, 'Automação ignorada: URL de requisição HTTP bloqueada');
     return;
   }
 
+  // Fixa a conexão TCP no endereço já validado por resolvePinnedAddress: sem isso, o
+  // Axios resolveria o DNS de novo na hora de conectar, e um DNS malicioso poderia
+  // responder um IP público na checagem e um IP interno na conexão real (rebinding).
+  const lookup = (_hostname: string, _options: unknown, callback: (err: null, address: string, family: number) => void) =>
+    callback(null, pinned.address, pinned.family);
+  const agentOptions = { lookup: lookup as never };
+  const agent = new URL(url).protocol === 'https:' ? new https.Agent(agentOptions) : new http.Agent(agentOptions);
+
   let response;
   try {
-    response = await axios({ method, url, headers, data: body, timeout: 10_000, validateStatus: () => true });
+    response = await axios({
+      method,
+      url,
+      headers,
+      data: body,
+      timeout: 10_000,
+      validateStatus: () => true,
+      httpAgent: agent,
+      httpsAgent: agent,
+    });
   } catch (err) {
     logger.warn({ err, cardId, url }, 'Automação ignorada: falha na requisição HTTP');
     return;
@@ -642,6 +662,7 @@ export const AutomationService = {
 
   async update(
     automationId: number,
+    pipelineId: number,
     changes: {
       name?: string;
       trigger_config?: Record<string, unknown> | null;
@@ -651,15 +672,15 @@ export const AutomationService = {
     }
   ) {
     const automation = await AutomationModel.findById(automationId);
-    if (!automation) {
+    if (!automation || automation.pipeline_id !== pipelineId) {
       throw AppError.notFound('Automação não encontrada');
     }
     return AutomationModel.update(automationId, changes as never);
   },
 
-  async delete(automationId: number) {
+  async delete(automationId: number, pipelineId: number) {
     const automation = await AutomationModel.findById(automationId);
-    if (!automation) {
+    if (!automation || automation.pipeline_id !== pipelineId) {
       throw AppError.notFound('Automação não encontrada');
     }
     return AutomationModel.delete(automationId);

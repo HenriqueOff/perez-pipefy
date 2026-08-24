@@ -10,8 +10,8 @@ function sanitize(user: UserRow) {
 }
 
 export const UserService = {
-  list() {
-    return UserModel.list();
+  list(isAdmin: boolean) {
+    return isAdmin ? UserModel.list() : UserModel.listBasic();
   },
 
   async create(input: { name: string; email: string; password: string; global_role?: GlobalRole }) {

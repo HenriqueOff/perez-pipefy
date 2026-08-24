@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 
 export const UserController = {
-  async list(_req: Request, res: Response) {
-    res.json(await UserService.list());
+  async list(req: Request, res: Response) {
+    res.json(await UserService.list(req.user!.role === 'admin'));
   },
 
   async create(req: Request, res: Response) {
