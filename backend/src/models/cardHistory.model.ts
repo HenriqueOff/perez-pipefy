@@ -59,6 +59,28 @@ export const CardHistoryModel = {
       );
   },
 
+  /** Feed de auditoria de um único pipeline — mesmo formato de listRecentForPipelines,
+   * usado no painel admin-only do pipe (engrenagem no board), paginado. */
+  listByPipeline(pipelineId: number, limit: number, offset: number) {
+    return db(TABLE)
+      .join('cards', 'cards.id', `${TABLE}.card_id`)
+      .leftJoin('users', 'users.id', `${TABLE}.user_id`)
+      .where('cards.pipeline_id', pipelineId)
+      .orderBy(`${TABLE}.created_at`, 'desc')
+      .limit(limit)
+      .offset(offset)
+      .select<
+        {
+          id: number;
+          event_type: CardHistoryEventType;
+          created_at: Date;
+          card_id: number;
+          card_title: string;
+          user_name: string | null;
+        }[]
+      >(`${TABLE}.id`, `${TABLE}.event_type`, `${TABLE}.created_at`, 'cards.id as card_id', 'cards.title as card_title', 'users.name as user_name');
+  },
+
   listPhaseTransitionsByPipeline(pipelineId: number) {
     return db<CardHistoryRow>(TABLE)
       .join('cards', 'cards.id', `${TABLE}.card_id`)

@@ -1,8 +1,10 @@
+import { db } from '../config/db';
 import { CardModel } from '../models/card.model';
 import { CardHistoryModel } from '../models/cardHistory.model';
 import { PipelineModel } from '../models/pipeline.model';
 import { PhaseModel } from '../models/phase.model';
 import { CustomFieldModel } from '../models/customField.model';
+import { UserModel } from '../models/user.model';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
 import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
@@ -57,6 +59,81 @@ export const PipelineService = {
     );
 
     return { ...pipeline, phases: phasesWithFields, members };
+  },
+
+  // --- painel admin-only (engrenagem no board; ver requireGlobalRole('admin') nas rotas) ---
+
+  async getAuditLog(pipelineId: number, limit: number, offset: number) {
+    const pipeline = await PipelineModel.findById(pipelineId);
+    if (!pipeline) {
+      throw AppError.notFound('Pipeline não encontrado');
+    }
+    return CardHistoryModel.listByPipeline(pipelineId, limit, offset);
+  },
+
+  async getAdminInfo(pipelineId: number) {
+    const pipeline = await PipelineModel.findById(pipelineId);
+    if (!pipeline) {
+      throw AppError.notFound('Pipeline não encontrado');
+    }
+
+    const count = (table: string, where: Record<string, unknown>) =>
+      db(table)
+        .where(where)
+        .count<{ count: string }[]>('* as count')
+        .first()
+        .then((row) => Number(row?.count ?? 0));
+
+    const [
+      creator,
+      cardsCount,
+      phasesCount,
+      customFieldsCount,
+      automationsCount,
+      labelsCount,
+      membersCount,
+      emailTemplatesCount,
+      connectionsCount,
+    ] = await Promise.all([
+      UserModel.findById(pipeline.created_by),
+      count('cards', { pipeline_id: pipelineId }),
+      count('phases', { pipeline_id: pipelineId }),
+      db('custom_fields')
+        .join('phases', 'phases.id', 'custom_fields.phase_id')
+        .where('phases.pipeline_id', pipelineId)
+        .count<{ count: string }[]>('custom_fields.id as count')
+        .first()
+        .then((row) => Number(row?.count ?? 0)),
+      count('automations', { pipeline_id: pipelineId }),
+      count('labels', { pipeline_id: pipelineId }),
+      count('pipeline_members', { pipeline_id: pipelineId }),
+      count('email_templates', { pipeline_id: pipelineId }),
+      db('pipeline_connections')
+        .where('owner_pipeline_id', pipelineId)
+        .orWhere('target_pipeline_id', pipelineId)
+        .count<{ count: string }[]>('* as count')
+        .first()
+        .then((row) => Number(row?.count ?? 0)),
+    ]);
+
+    return {
+      id: pipeline.id,
+      archived: pipeline.archived,
+      public_form_enabled: pipeline.public_form_enabled,
+      pipefy_pipe_id: pipeline.pipefy_pipe_id ?? null,
+      created_at: pipeline.created_at,
+      created_by_name: creator?.name ?? null,
+      counts: {
+        cards: cardsCount,
+        phases: phasesCount,
+        customFields: customFieldsCount,
+        automations: automationsCount,
+        labels: labelsCount,
+        members: membersCount,
+        emailTemplates: emailTemplatesCount,
+        connections: connectionsCount,
+      },
+    };
   },
 
   async create(input: { name: string; description?: string; created_by: number }) {

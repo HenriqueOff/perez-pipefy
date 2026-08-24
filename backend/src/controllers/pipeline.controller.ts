@@ -31,6 +31,16 @@ export const PipelineController = {
     res.json(await DashboardService.getForPipeline(Number(req.params.pipelineId)));
   },
 
+  async auditLog(req: Request, res: Response) {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+    res.json(await PipelineService.getAuditLog(Number(req.params.pipelineId), limit, offset));
+  },
+
+  async adminInfo(req: Request, res: Response) {
+    res.json(await PipelineService.getAdminInfo(Number(req.params.pipelineId)));
+  },
+
   async listMembers(req: Request, res: Response) {
     res.json(await PipelineModel.listMembers(Number(req.params.pipelineId)));
   },

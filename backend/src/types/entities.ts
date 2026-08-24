@@ -48,6 +48,7 @@ export interface PipelineRow {
   archived: boolean;
   public_form_token: string | null;
   public_form_enabled: boolean;
+  pipefy_pipe_id: string | null;
   created_at: Date;
   updated_at: Date;
 }

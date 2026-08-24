@@ -1,6 +1,7 @@
 import { api } from './client';
 import {
   Attachment,
+  AuditLogEntry,
   Automation,
   AutomationActionType,
   AutomationTriggerType,
@@ -12,6 +13,7 @@ import {
   Comment,
   DashboardData,
   EmailTemplate,
+  PipelineAdminInfo,
   PipelineConnection,
   PublicFormInfo,
   CustomField,
@@ -32,6 +34,12 @@ export const PipelinesApi = {
   detail: (id: number) => api.get<PipelineDetail>(`/pipelines/${id}`).then((r) => r.data),
   create: (input: { name: string; description?: string }) =>
     api.post<Pipeline>('/pipelines', input).then((r) => r.data),
+  update: (id: number, changes: { name?: string; description?: string | null; archived?: boolean }) =>
+    api.patch<Pipeline>(`/pipelines/${id}`, changes).then((r) => r.data),
+
+  auditLog: (id: number, params?: { limit?: number; offset?: number }) =>
+    api.get<AuditLogEntry[]>(`/pipelines/${id}/audit-log`, { params }).then((r) => r.data),
+  adminInfo: (id: number) => api.get<PipelineAdminInfo>(`/pipelines/${id}/admin-info`).then((r) => r.data),
 
   createPhase: (pipelineId: number, input: { name: string; is_initial?: boolean; is_final?: boolean }) =>
     api.post<Phase>(`/pipelines/${pipelineId}/phases`, input).then((r) => r.data),

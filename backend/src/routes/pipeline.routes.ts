@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PipelineController } from '../controllers/pipeline.controller';
 import { authenticate } from '../middlewares/authenticate';
+import { requireGlobalRole } from '../middlewares/requireGlobalRole';
 import { requirePipelineRole } from '../middlewares/requirePipelineRole';
 import { validateBody } from '../middlewares/validate';
 import { addMemberSchema, createPipelineSchema, updatePipelineSchema } from '../validators/pipeline.schema';
@@ -29,6 +30,11 @@ router.patch(
 );
 
 router.get('/:pipelineId/dashboard', requirePipelineRole('viewer'), asyncHandler(PipelineController.dashboard));
+
+// Painel da engrenagem no board — admin geral, não basta ser owner/manager do pipeline
+// (mesmo critério já usado pelo toggle de criação manual de card em phase.routes.ts).
+router.get('/:pipelineId/audit-log', requireGlobalRole('admin'), asyncHandler(PipelineController.auditLog));
+router.get('/:pipelineId/admin-info', requireGlobalRole('admin'), asyncHandler(PipelineController.adminInfo));
 
 router.get('/:pipelineId/members', requirePipelineRole('viewer'), asyncHandler(PipelineController.listMembers));
 router.post(

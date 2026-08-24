@@ -13,9 +13,11 @@ import LabelsModal from '../components/LabelsModal';
 import AutomationsModal from '../components/AutomationsModal';
 import ConnectionsModal from '../components/ConnectionsModal';
 import PublicFormModal from '../components/PublicFormModal';
+import PipelineAdminSettingsModal from '../components/PipelineAdminSettingsModal';
 import CardsTableView from '../components/CardsTableView';
 import DashboardView from '../components/DashboardView';
 import Tooltip from '../components/Tooltip';
+import Icon from '../components/Icon';
 
 export default function PipelineBoardPage() {
   const { pipelineId } = useParams();
@@ -45,6 +47,7 @@ export default function PipelineBoardPage() {
   const [showAutomations, setShowAutomations] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [showPublicForm, setShowPublicForm] = useState(false);
+  const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'dashboard'>('kanban');
   const [settingsPhaseId, setSettingsPhaseId] = useState<number | null>(null);
 
@@ -177,6 +180,17 @@ export default function PipelineBoardPage() {
               Automações
             </button>
           )}
+          {isGlobalAdmin && (
+            <Tooltip label="Administração do pipe (só admins veem este botão)">
+              <button
+                className="icon-button admin-gear-button"
+                onClick={() => setShowAdminSettings(true)}
+                aria-label="Administração do pipe"
+              >
+                <Icon name="gear" />
+              </button>
+            </Tooltip>
+          )}
           {canManagePhases && (
             <button className="secondary-button" onClick={() => setShowConnections(true)}>
               Conexões
@@ -300,6 +314,10 @@ export default function PipelineBoardPage() {
       )}
 
       {showPublicForm && <PublicFormModal pipelineId={id} onClose={() => setShowPublicForm(false)} />}
+
+      {showAdminSettings && isGlobalAdmin && (
+        <PipelineAdminSettingsModal pipelineId={id} pipeline={pipeline} onClose={() => setShowAdminSettings(false)} />
+      )}
 
       {settingsPhaseId && (
         <PhaseSettingsModal

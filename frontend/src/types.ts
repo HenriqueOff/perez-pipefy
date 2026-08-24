@@ -23,6 +23,36 @@ export interface PipelineOverviewItem extends Pipeline {
   slaBreachedCount: number;
 }
 
+// Painel admin-only do pipe (engrenagem no board) — GET /pipelines/:id/audit-log
+export interface AuditLogEntry {
+  id: number;
+  event_type: string;
+  created_at: string;
+  card_id: number;
+  card_title: string;
+  user_name: string | null;
+}
+
+// GET /pipelines/:id/admin-info
+export interface PipelineAdminInfo {
+  id: number;
+  archived: boolean;
+  public_form_enabled: boolean;
+  pipefy_pipe_id: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  counts: {
+    cards: number;
+    phases: number;
+    customFields: number;
+    automations: number;
+    labels: number;
+    members: number;
+    emailTemplates: number;
+    connections: number;
+  };
+}
+
 export interface RecentActivityItem {
   id: number;
   event_type: string;
