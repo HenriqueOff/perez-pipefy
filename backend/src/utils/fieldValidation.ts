@@ -1,7 +1,16 @@
-import { CustomFieldRow } from '../types/entities';
 import { AppError } from './AppError';
 
-export function validateFieldValue(field: CustomFieldRow, value: unknown): void {
+// Estrutura mínima compartilhada por CustomFieldRow (campo de fase de pipeline) e
+// DatabaseFieldRow (campo de database) — ambos reaproveitam esta mesma validação.
+export interface FieldLike {
+  id: number;
+  label: string;
+  type: string;
+  options: string[] | null;
+  required: boolean;
+}
+
+export function validateFieldValue(field: FieldLike, value: unknown): void {
   if (value === null || value === undefined || value === '') {
     if (field.required) {
       throw new AppError(`O campo "${field.label}" é obrigatório`, 422);
@@ -43,7 +52,7 @@ export function validateFieldValue(field: CustomFieldRow, value: unknown): void 
   }
 }
 
-export function requiredFieldsMissing(fields: CustomFieldRow[], values: Map<number, unknown>): CustomFieldRow[] {
+export function requiredFieldsMissing<T extends FieldLike>(fields: T[], values: Map<number, unknown>): T[] {
   return fields.filter((field) => {
     if (!field.required) return false;
     const value = values.get(field.id);

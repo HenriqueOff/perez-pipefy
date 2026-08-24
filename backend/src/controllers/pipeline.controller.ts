@@ -5,12 +5,12 @@ import { DashboardService } from '../services/dashboard.service';
 
 export const PipelineController = {
   async list(req: Request, res: Response) {
-    const pipelines = await PipelineService.listForUser(req.user!.id, req.user!.role === 'admin');
+    const pipelines = await PipelineService.listForUser(req.user!.id);
     res.json(pipelines);
   },
 
   async overview(req: Request, res: Response) {
-    const overview = await PipelineService.getOverviewForUser(req.user!.id, req.user!.role === 'admin');
+    const overview = await PipelineService.getOverviewForUser(req.user!.id);
     res.json(overview);
   },
 

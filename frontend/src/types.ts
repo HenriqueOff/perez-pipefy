@@ -1,6 +1,7 @@
 export type GlobalRole = 'admin' | 'member';
 export type PipelineRole = 'owner' | 'manager' | 'editor' | 'viewer';
 export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'formula';
+export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
 
 export interface User {
   id: number;
@@ -15,6 +16,60 @@ export interface Pipeline {
   description: string | null;
   archived: boolean;
   created_by: number;
+}
+
+// --- Databases (conteúdo irmão de Pipelines: tabela de registros, sem fases/kanban) ---
+
+export interface Database {
+  id: number;
+  name: string;
+  description: string | null;
+  archived: boolean;
+  created_by: number;
+}
+
+export interface DatabaseField {
+  id: number;
+  database_id: number;
+  label: string;
+  key: string;
+  type: DatabaseFieldType;
+  options: string[] | null;
+  required: boolean;
+  position: number;
+}
+
+export interface DatabaseMember {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  database_role: PipelineRole;
+}
+
+export interface DatabaseDetail extends Database {
+  fields: DatabaseField[];
+  members: DatabaseMember[];
+}
+
+export interface DatabaseRecordFieldValue {
+  fieldId: number;
+  value: unknown;
+}
+
+export interface DatabaseRecord {
+  id: number;
+  database_id: number;
+  title: string;
+  created_by: number;
+  position: number;
+  created_at: string;
+  fieldValues: DatabaseRecordFieldValue[];
+}
+
+export interface DatabaseRecordsResponse {
+  fields: DatabaseField[];
+  records: DatabaseRecord[];
 }
 
 export interface PipelineOverviewItem extends Pipeline {

@@ -31,12 +31,16 @@ export const PipelineModel = {
     return db<PipelineRow>(TABLE).where({ public_form_token: token, public_form_enabled: true, archived: false }).first();
   },
 
-  listForUser(userId: number, isAdmin: boolean) {
-    const query = db<PipelineRow>(TABLE).where({ archived: false }).select(...SAFE_COLUMNS).orderBy('name');
-    if (isAdmin) {
-      return query;
-    }
-    return query.whereIn('id', db(MEMBERS_TABLE).select('pipeline_id').where({ user_id: userId }));
+  // Sem bypass de admin de propósito: a listagem/visibilidade reflete só o que o usuário
+  // foi de fato adicionado como membro, mesmo pra admin global — admin ainda consegue
+  // gerenciar qualquer pipeline diretamente pelo ID (requirePipelineRole sempre deixa
+  // passar), só não aparece na lista dele por padrão.
+  listForUser(userId: number) {
+    return db<PipelineRow>(TABLE)
+      .where({ archived: false })
+      .whereIn('id', db(MEMBERS_TABLE).select('pipeline_id').where({ user_id: userId }))
+      .select(...SAFE_COLUMNS)
+      .orderBy('name');
   },
 
   setPublicForm(id: number, changes: { public_form_token?: string; public_form_enabled: boolean }) {

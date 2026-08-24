@@ -271,3 +271,52 @@ export interface CardExternalRefRow {
   external_type: string;
   last_synced_at: Date | null;
 }
+
+export interface DatabaseRow {
+  id: number;
+  name: string;
+  description: string | null;
+  created_by: number;
+  archived: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DatabaseMemberRow {
+  id: number;
+  database_id: number;
+  user_id: number;
+  database_role: PipelineRole;
+  created_at: Date;
+}
+
+export interface DatabaseFieldRow {
+  id: number;
+  database_id: number;
+  label: string;
+  key: string;
+  type: CustomFieldType;
+  options: string[] | null;
+  required: boolean;
+  position: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DatabaseRecordRow {
+  id: number;
+  database_id: number;
+  title: string;
+  created_by: number;
+  position: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DatabaseRecordFieldValueRow {
+  id: number;
+  record_id: number;
+  database_field_id: number;
+  value: unknown;
+  updated_at: Date;
+}

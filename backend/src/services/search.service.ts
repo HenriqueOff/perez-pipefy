@@ -22,7 +22,7 @@ export const SearchService = {
       .limit(20);
 
     if (!isAdmin) {
-      const pipelines = await PipelineModel.listForUser(userId, false);
+      const pipelines = await PipelineModel.listForUser(userId);
       const pipelineIds = pipelines.map((p) => p.id);
       if (pipelineIds.length === 0) return [];
       builder = builder.whereIn('cards.pipeline_id', pipelineIds);

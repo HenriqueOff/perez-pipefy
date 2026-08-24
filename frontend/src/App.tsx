@@ -5,6 +5,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import PipelinesPage from './pages/PipelinesPage';
 import PipelineBoardPage from './pages/PipelineBoardPage';
+import DatabaseBoardPage from './pages/DatabaseBoardPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminIntegrationsPage from './pages/AdminIntegrationsPage';
@@ -41,6 +42,7 @@ export default function App() {
       >
         <Route index element={<PipelinesPage />} />
         <Route path="pipelines/:pipelineId" element={<PipelineBoardPage />} />
+        <Route path="databases/:databaseId" element={<DatabaseBoardPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="admin/users"

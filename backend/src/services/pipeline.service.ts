@@ -13,12 +13,12 @@ import { FormulaFieldService } from './formulaField.service';
 const RECENT_ACTIVITY_LIMIT = 15;
 
 export const PipelineService = {
-  listForUser(userId: number, isAdmin: boolean) {
-    return PipelineModel.listForUser(userId, isAdmin);
+  listForUser(userId: number) {
+    return PipelineModel.listForUser(userId);
   },
 
-  async getOverviewForUser(userId: number, isAdmin: boolean) {
-    const pipelines = await PipelineModel.listForUser(userId, isAdmin);
+  async getOverviewForUser(userId: number) {
+    const pipelines = await PipelineModel.listForUser(userId);
     const pipelineIds = pipelines.map((p) => p.id);
 
     const [stats, recentActivity] = await Promise.all([

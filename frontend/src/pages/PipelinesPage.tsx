@@ -2,13 +2,14 @@ import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { PipelinesApi } from '../api/pipelines';
+import { DatabasesApi } from '../api/databases';
 import { useAuth } from '../context/AuthContext';
-import { PipelineOverviewItem, RecentActivityItem } from '../types';
+import { Database, PipelineOverviewItem, RecentActivityItem } from '../types';
 import Tooltip from '../components/Tooltip';
 
 /** Paleta fixa inspirada nas cores dos tiles de pipe do Pipefy (fundo pastel + ícone saturado
  * da mesma família), escolhida por hash do nome pra manter a cor estável entre carregamentos. */
-const PIPELINE_PALETTE = [
+const TILE_PALETTE = [
   { bg: '#EDE9FE', icon: '#6D28D9' },
   { bg: '#FCE7F3', icon: '#BE185D' },
   { bg: '#DCFCE7', icon: '#15803D' },
@@ -25,7 +26,7 @@ function paletteFor(input: string) {
     hash = (hash << 5) - hash + input.charCodeAt(i);
     hash |= 0;
   }
-  return PIPELINE_PALETTE[Math.abs(hash) % PIPELINE_PALETTE.length];
+  return TILE_PALETTE[Math.abs(hash) % TILE_PALETTE.length];
 }
 
 function activityIcon(eventType: string): string {
@@ -67,8 +68,46 @@ function describeActivity(a: RecentActivityItem): string {
   }
 }
 
+type ContentTab = 'pipelines' | 'databases';
+
 export default function PipelinesPage() {
   const { user } = useAuth();
+  const [tab, setTab] = useState<ContentTab>('pipelines');
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1>Olá{user ? `, ${user.name.split(' ')[0]}` : ''}</h1>
+          <p className="muted">
+            {tab === 'pipelines' ? 'Seus pipelines e o que aconteceu recentemente.' : 'Seus databases.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="view-toggle" style={{ marginBottom: 20 }}>
+        <button
+          type="button"
+          className={`view-toggle-tab ${tab === 'pipelines' ? 'view-toggle-tab-active' : ''}`}
+          onClick={() => setTab('pipelines')}
+        >
+          Pipelines
+        </button>
+        <button
+          type="button"
+          className={`view-toggle-tab ${tab === 'databases' ? 'view-toggle-tab-active' : ''}`}
+          onClick={() => setTab('databases')}
+        >
+          Databases
+        </button>
+      </div>
+
+      {tab === 'pipelines' ? <PipelinesTab /> : <DatabasesTab />}
+    </div>
+  );
+}
+
+function PipelinesTab() {
   const queryClient = useQueryClient();
   const {
     data: overview,
@@ -99,14 +138,7 @@ export default function PipelinesPage() {
   const recentActivity: RecentActivityItem[] = overview?.recentActivity ?? [];
 
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1>Olá{user ? `, ${user.name.split(' ')[0]}` : ''}</h1>
-          <p className="muted">Seus pipelines e o que aconteceu recentemente.</p>
-        </div>
-      </div>
-
+    <>
       {creating && (
         <form className="inline-form" onSubmit={handleCreate}>
           <input
@@ -169,7 +201,9 @@ export default function PipelinesPage() {
             </Link>
           );
         })}
-        {!isLoading && !isError && pipelines.length === 0 && <p>Nenhum pipeline ainda. Crie o primeiro acima.</p>}
+        {!isLoading && !isError && pipelines.length === 0 && (
+          <p>Nenhum pipeline ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
+        )}
       </div>
 
       {recentActivity.length > 0 && (
@@ -194,6 +228,90 @@ export default function PipelinesPage() {
           </ul>
         </>
       )}
-    </div>
+    </>
+  );
+}
+
+function DatabasesTab() {
+  const queryClient = useQueryClient();
+  const { data: databases, isLoading, isError, refetch } = useQuery({
+    queryKey: ['databases'],
+    queryFn: DatabasesApi.list,
+  });
+  const [name, setName] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const createMutation = useMutation({
+    mutationFn: (input: { name: string }) => DatabasesApi.create(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['databases'] });
+      setName('');
+      setCreating(false);
+    },
+  });
+
+  function handleCreate(e: FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    createMutation.mutate({ name: name.trim() });
+  }
+
+  const list: Database[] = databases ?? [];
+
+  return (
+    <>
+      {creating && (
+        <form className="inline-form" onSubmit={handleCreate}>
+          <input
+            placeholder="Nome do database (ex: Clientes)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+          <button type="submit" disabled={createMutation.isPending}>
+            Criar
+          </button>
+          <button type="button" className="secondary-button" onClick={() => setCreating(false)}>
+            Cancelar
+          </button>
+        </form>
+      )}
+
+      {isLoading && <p>Carregando...</p>}
+      {isError && (
+        <p className="error">
+          Não foi possível carregar seus databases.{' '}
+          <button className="link-button" onClick={() => refetch()}>
+            Tentar de novo
+          </button>
+        </p>
+      )}
+
+      <div className="pipeline-grid">
+        <button type="button" className="pipeline-card pipeline-card-create" onClick={() => setCreating((v) => !v)}>
+          <span className="pipeline-card-create-icon">+</span>
+          Criar database
+        </button>
+        {list.map((database) => {
+          const palette = paletteFor(database.name);
+          return (
+            <Link
+              to={`/databases/${database.id}`}
+              key={database.id}
+              className="pipeline-card"
+              style={{ background: palette.bg }}
+            >
+              <span className="pipeline-card-icon" style={{ background: palette.icon }}>
+                {database.name.charAt(0).toUpperCase()}
+              </span>
+              <h3>{database.name}</h3>
+            </Link>
+          );
+        })}
+        {!isLoading && !isError && list.length === 0 && (
+          <p>Nenhum database ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
+        )}
+      </div>
+    </>
   );
 }
