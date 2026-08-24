@@ -4,6 +4,9 @@ import { Card, Phase } from '../types';
 import KanbanCard from './KanbanCard';
 import Icon from './Icon';
 import Tooltip from './Tooltip';
+import { getContrastTextColor } from '../utils/color';
+
+const DEFAULT_PHASE_COLOR = '#9CA3AF';
 
 export default function KanbanColumn({
   phase,
@@ -35,10 +38,12 @@ export default function KanbanColumn({
   }, [collapsed, storageKey]);
 
   const overLimit = phase.wip_limit != null && cards.length > phase.wip_limit;
+  const pillColor = phase.color ?? DEFAULT_PHASE_COLOR;
+  const pillTextColor = getContrastTextColor(pillColor);
 
   if (collapsed) {
     return (
-      <div className="kanban-column kanban-column-collapsed" style={{ borderTopColor: phase.color ?? '#6b7280' }}>
+      <div className="kanban-column kanban-column-collapsed">
         <button
           type="button"
           className="icon-button icon-button-small kanban-column-expand"
@@ -55,7 +60,7 @@ export default function KanbanColumn({
 
   return (
     <div className={`kanban-column ${isOver ? 'kanban-column-over' : ''}`} ref={setNodeRef}>
-      <div className="kanban-column-header" style={{ borderTopColor: phase.color ?? '#6b7280' }}>
+      <div className="kanban-column-header">
         <div className="kanban-column-title">
           <button
             type="button"
@@ -65,16 +70,19 @@ export default function KanbanColumn({
           >
             <Icon name="chevronLeft" size={14} />
           </button>
-          <span>{phase.name}</span>
-          {phase.wip_limit != null ? (
-            <Tooltip label={overLimit ? `Limite de ${phase.wip_limit} cards excedido` : `Limite: ${phase.wip_limit} cards`}>
-              <span className={`kanban-column-count ${overLimit ? 'kanban-column-count-over' : ''}`}>
-                {cards.length}/{phase.wip_limit}
-              </span>
-            </Tooltip>
-          ) : (
-            <span className="kanban-column-count">{cards.length}</span>
-          )}
+          <span className="kanban-column-pill" style={{ background: pillColor, color: pillTextColor }}>
+            {phase.is_final && <Icon name="check" size={12} />}
+            {phase.name}
+            {phase.wip_limit != null ? (
+              <Tooltip label={overLimit ? `Limite de ${phase.wip_limit} cards excedido` : `Limite: ${phase.wip_limit} cards`}>
+                <span className={`kanban-column-count ${overLimit ? 'kanban-column-count-over' : ''}`}>
+                  {cards.length}/{phase.wip_limit}
+                </span>
+              </Tooltip>
+            ) : (
+              <span className="kanban-column-count">{cards.length}</span>
+            )}
+          </span>
         </div>
         {canEdit && (
           <div className="kanban-column-controls">
@@ -109,7 +117,7 @@ export default function KanbanColumn({
       </div>
       <div className="kanban-column-body">
         {cards.map((card) => (
-          <KanbanCard key={card.id} card={card} slaHours={phase.sla_hours} onClick={() => onCardClick(card)} />
+          <KanbanCard key={card.id} card={card} phase={phase} onClick={() => onCardClick(card)} />
         ))}
       </div>
     </div>

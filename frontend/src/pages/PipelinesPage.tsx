@@ -4,14 +4,28 @@ import { Link } from 'react-router-dom';
 import { PipelinesApi } from '../api/pipelines';
 import { useAuth } from '../context/AuthContext';
 import { PipelineOverviewItem, RecentActivityItem } from '../types';
+import Tooltip from '../components/Tooltip';
 
-function hashHue(input: string): number {
+/** Paleta fixa inspirada nas cores dos tiles de pipe do Pipefy (fundo pastel + ícone saturado
+ * da mesma família), escolhida por hash do nome pra manter a cor estável entre carregamentos. */
+const PIPELINE_PALETTE = [
+  { bg: '#EDE9FE', icon: '#6D28D9' },
+  { bg: '#FCE7F3', icon: '#BE185D' },
+  { bg: '#DCFCE7', icon: '#15803D' },
+  { bg: '#FEF9C3', icon: '#A16207' },
+  { bg: '#DBEAFE', icon: '#1D4ED8' },
+  { bg: '#FFEDD5', icon: '#C2410C' },
+  { bg: '#CCFBF1', icon: '#0F766E' },
+  { bg: '#F3F4F6', icon: '#4B5563' },
+];
+
+function paletteFor(input: string) {
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     hash = (hash << 5) - hash + input.charCodeAt(i);
     hash |= 0;
   }
-  return Math.abs(hash) % 360;
+  return PIPELINE_PALETTE[Math.abs(hash) % PIPELINE_PALETTE.length];
 }
 
 function activityIcon(eventType: string): string {
@@ -91,7 +105,6 @@ export default function PipelinesPage() {
           <h1>Olá{user ? `, ${user.name.split(' ')[0]}` : ''}</h1>
           <p className="muted">Seus pipelines e o que aconteceu recentemente.</p>
         </div>
-        <button onClick={() => setCreating((v) => !v)}>{creating ? 'Cancelar' : 'Novo pipeline'}</button>
       </div>
 
       {creating && (
@@ -104,6 +117,9 @@ export default function PipelinesPage() {
           />
           <button type="submit" disabled={createMutation.isPending}>
             Criar
+          </button>
+          <button type="button" className="secondary-button" onClick={() => setCreating(false)}>
+            Cancelar
           </button>
         </form>
       )}
@@ -119,31 +135,37 @@ export default function PipelinesPage() {
       )}
 
       <div className="pipeline-grid">
+        <button type="button" className="pipeline-card pipeline-card-create" onClick={() => setCreating((v) => !v)}>
+          <span className="pipeline-card-create-icon">+</span>
+          Criar pipeline
+        </button>
         {pipelines.map((pipeline) => {
-          const hue = hashHue(pipeline.name);
+          const palette = paletteFor(pipeline.name);
+          const alerts = pipeline.overdueCount + pipeline.slaBreachedCount;
           return (
             <Link
               to={`/pipelines/${pipeline.id}`}
               key={pipeline.id}
               className="pipeline-card"
-              style={{ borderTopColor: `hsl(${hue}, 65%, 50%)` }}
+              style={{ background: palette.bg }}
             >
-              <div className="pipeline-card-header">
-                <span className="pipeline-card-icon" style={{ background: `hsl(${hue}, 65%, 50%)` }}>
-                  {pipeline.name.charAt(0).toUpperCase()}
-                </span>
-                <h3>{pipeline.name}</h3>
-              </div>
-              {pipeline.description && <p>{pipeline.description}</p>}
-              <div className="pipeline-card-badges">
-                <span className="status-badge">{pipeline.cardCount} card{pipeline.cardCount === 1 ? '' : 's'}</span>
-                {pipeline.overdueCount > 0 && (
-                  <span className="status-badge status-badge-warning">{pipeline.overdueCount} atrasado{pipeline.overdueCount === 1 ? '' : 's'}</span>
-                )}
-                {pipeline.slaBreachedCount > 0 && (
-                  <span className="status-badge status-badge-danger">{pipeline.slaBreachedCount} SLA estourado{pipeline.slaBreachedCount === 1 ? '' : 's'}</span>
-                )}
-              </div>
+              {alerts > 0 && (
+                <Tooltip
+                  label={[
+                    pipeline.overdueCount > 0 ? `${pipeline.overdueCount} atrasado${pipeline.overdueCount === 1 ? '' : 's'}` : null,
+                    pipeline.slaBreachedCount > 0 ? `${pipeline.slaBreachedCount} SLA estourado${pipeline.slaBreachedCount === 1 ? '' : 's'}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                >
+                  <span className="pipeline-card-alert">{alerts}</span>
+                </Tooltip>
+              )}
+              <span className="pipeline-card-icon" style={{ background: palette.icon }}>
+                {pipeline.name.charAt(0).toUpperCase()}
+              </span>
+              <h3>{pipeline.name}</h3>
+              <span className="pipeline-card-count">{pipeline.cardCount} card{pipeline.cardCount === 1 ? '' : 's'}</span>
             </Link>
           );
         })}

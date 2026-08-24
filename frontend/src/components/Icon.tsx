@@ -5,6 +5,15 @@ type IconElement =
 
 const ICONS: Record<string, IconElement[]> = {
   x: [{ type: 'path', d: 'M18 6 6 18M6 6l12 12' }],
+  check: [{ type: 'path', d: 'M20 6 9 17l-5-5' }],
+  user: [
+    { type: 'path', d: 'M20 21a8 8 0 1 0-16 0' },
+    { type: 'circle', cx: 12, cy: 7, r: 4 },
+  ],
+  calendar: [
+    { type: 'path', d: 'M8 2v4M16 2v4M3 10h18' },
+    { type: 'path', d: 'M4 6h16a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z' },
+  ],
   gear: [
     {
       type: 'path',

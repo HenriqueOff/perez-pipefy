@@ -144,21 +144,21 @@ export default function PipelineBoardPage() {
           <div className="view-toggle">
             <button
               type="button"
-              className={viewMode === 'kanban' ? '' : 'secondary-button'}
+              className={`view-toggle-tab ${viewMode === 'kanban' ? 'view-toggle-tab-active' : ''}`}
               onClick={() => setViewMode('kanban')}
             >
               Quadro
             </button>
             <button
               type="button"
-              className={viewMode === 'table' ? '' : 'secondary-button'}
+              className={`view-toggle-tab ${viewMode === 'table' ? 'view-toggle-tab-active' : ''}`}
               onClick={() => setViewMode('table')}
             >
               Tabela
             </button>
             <button
               type="button"
-              className={viewMode === 'dashboard' ? '' : 'secondary-button'}
+              className={`view-toggle-tab ${viewMode === 'dashboard' ? 'view-toggle-tab-active' : ''}`}
               onClick={() => setViewMode('dashboard')}
             >
               Dashboard
