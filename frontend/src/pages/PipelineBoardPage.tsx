@@ -175,7 +175,7 @@ export default function PipelineBoardPage() {
           <button className="secondary-button" onClick={() => setShowLabels(true)}>
             Etiquetas
           </button>
-          {canManagePhases && (
+          {isGlobalAdmin && (
             <button className="secondary-button" onClick={() => setShowAutomations(true)}>
               Automações
             </button>
@@ -191,12 +191,12 @@ export default function PipelineBoardPage() {
               </button>
             </Tooltip>
           )}
-          {canManagePhases && (
+          {isGlobalAdmin && (
             <button className="secondary-button" onClick={() => setShowConnections(true)}>
               Conexões
             </button>
           )}
-          {canManagePhases && (
+          {isGlobalAdmin && (
             <button className="secondary-button" onClick={() => setShowPublicForm(true)}>
               Formulário público
             </button>
@@ -304,13 +304,13 @@ export default function PipelineBoardPage() {
         <AutomationsModal
           pipelineId={id}
           pipeline={pipeline}
-          canManage={canManagePhases}
+          canManage={isGlobalAdmin}
           onClose={() => setShowAutomations(false)}
         />
       )}
 
       {showConnections && (
-        <ConnectionsModal pipelineId={id} canManage={canManagePhases} onClose={() => setShowConnections(false)} />
+        <ConnectionsModal pipelineId={id} canManage={isGlobalAdmin} onClose={() => setShowConnections(false)} />
       )}
 
       {showPublicForm && <PublicFormModal pipelineId={id} onClose={() => setShowPublicForm(false)} />}

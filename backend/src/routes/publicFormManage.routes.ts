@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { PublicFormController } from '../controllers/publicForm.controller';
-import { requirePipelineRole } from '../middlewares/requirePipelineRole';
+import { requireGlobalRole } from '../middlewares/requireGlobalRole';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router({ mergeParams: true });
 
-router.get('/', requirePipelineRole('manager'), asyncHandler(PublicFormController.manageInfo));
-router.post('/enable', requirePipelineRole('manager'), asyncHandler(PublicFormController.enable));
-router.post('/disable', requirePipelineRole('manager'), asyncHandler(PublicFormController.disable));
-router.post('/regenerate', requirePipelineRole('manager'), asyncHandler(PublicFormController.regenerate));
+// Admin-only de propósito, mesmo critério de automation.routes.ts.
+router.get('/', requireGlobalRole('admin'), asyncHandler(PublicFormController.manageInfo));
+router.post('/enable', requireGlobalRole('admin'), asyncHandler(PublicFormController.enable));
+router.post('/disable', requireGlobalRole('admin'), asyncHandler(PublicFormController.disable));
+router.post('/regenerate', requireGlobalRole('admin'), asyncHandler(PublicFormController.regenerate));
 
 export default router;

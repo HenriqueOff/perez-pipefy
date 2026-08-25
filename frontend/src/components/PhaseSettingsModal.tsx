@@ -243,12 +243,19 @@ export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, o
 
           <div className="page-header">
             <h3>Campos customizados</h3>
-            <button type="button" className="secondary-button" onClick={() => setShowAddField((v) => !v)}>
-              {showAddField ? 'Cancelar' : '+ Novo campo'}
-            </button>
+            {isGlobalAdmin && (
+              <button type="button" className="secondary-button" onClick={() => setShowAddField((v) => !v)}>
+                {showAddField ? 'Cancelar' : '+ Novo campo'}
+              </button>
+            )}
           </div>
+          {!isGlobalAdmin && (
+            <p className="muted" style={{ marginTop: -8, marginBottom: 12 }}>
+              Só admins geral podem criar, editar ou excluir campos customizados.
+            </p>
+          )}
 
-          {showAddField && (
+          {isGlobalAdmin && showAddField && (
             <AddFieldForm
               pipelineId={pipelineId}
               phaseId={phase.id}
@@ -263,7 +270,7 @@ export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, o
           <ul className="field-manage-list">
             {phase.customFields.length === 0 && <p className="muted">Esta fase ainda não tem campos customizados.</p>}
             {phase.customFields.map((field) =>
-              editingFieldId === field.id ? (
+              isGlobalAdmin && editingFieldId === field.id ? (
                 <EditFieldForm
                   key={field.id}
                   pipelineId={pipelineId}
@@ -286,16 +293,20 @@ export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, o
                       {FIELD_TYPE_LABELS[field.type]} · <code>{field.key}</code>
                     </span>
                   </div>
-                  <button type="button" className="secondary-button" onClick={() => setEditingFieldId(field.id)}>
-                    Editar
-                  </button>
-                  <DeleteFieldButton
-                    pipelineId={pipelineId}
-                    phaseId={phase.id}
-                    fieldId={field.id}
-                    onDone={invalidate}
-                    onError={setError}
-                  />
+                  {isGlobalAdmin && (
+                    <>
+                      <button type="button" className="secondary-button" onClick={() => setEditingFieldId(field.id)}>
+                        Editar
+                      </button>
+                      <DeleteFieldButton
+                        pipelineId={pipelineId}
+                        phaseId={phase.id}
+                        fieldId={field.id}
+                        onDone={invalidate}
+                        onError={setError}
+                      />
+                    </>
+                  )}
                 </li>
               )
             )}

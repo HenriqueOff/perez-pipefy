@@ -1,25 +1,26 @@
 import { Router } from 'express';
 import { EmailTemplateController } from '../controllers/emailTemplate.controller';
-import { requirePipelineRole } from '../middlewares/requirePipelineRole';
+import { requireGlobalRole } from '../middlewares/requireGlobalRole';
 import { validateBody } from '../middlewares/validate';
 import { createEmailTemplateSchema, updateEmailTemplateSchema } from '../validators/emailTemplate.schema';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router({ mergeParams: true });
 
-router.get('/', requirePipelineRole('viewer'), asyncHandler(EmailTemplateController.list));
+// Admin-only de propósito, mesmo critério de automation.routes.ts.
+router.get('/', requireGlobalRole('admin'), asyncHandler(EmailTemplateController.list));
 router.post(
   '/',
-  requirePipelineRole('manager'),
+  requireGlobalRole('admin'),
   validateBody(createEmailTemplateSchema),
   asyncHandler(EmailTemplateController.create)
 );
 router.patch(
   '/:templateId',
-  requirePipelineRole('manager'),
+  requireGlobalRole('admin'),
   validateBody(updateEmailTemplateSchema),
   asyncHandler(EmailTemplateController.update)
 );
-router.delete('/:templateId', requirePipelineRole('manager'), asyncHandler(EmailTemplateController.remove));
+router.delete('/:templateId', requireGlobalRole('admin'), asyncHandler(EmailTemplateController.remove));
 
 export default router;

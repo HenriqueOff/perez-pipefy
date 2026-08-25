@@ -17,8 +17,11 @@ router.put(
   validateBody(upsertImoviewConfigSchema),
   asyncHandler(IntegrationController.upsertImoviewConfig)
 );
+// Admin-only de propósito, mesmo critério de automation.routes.ts — antes bastava ser
+// editor+ do pipeline de destino, mas isso saiu do alcance de manager/owner.
 router.post(
   '/imoview/import-card',
+  requireGlobalRole('admin'),
   validateBody(importCardFromImoviewSchema),
   asyncHandler(IntegrationController.importCardFromImoview)
 );
