@@ -9,6 +9,7 @@ export interface CreateUserInput {
   email: string;
   password_hash: string;
   global_role?: GlobalRole;
+  must_change_password?: boolean;
 }
 
 export const UserModel = {
@@ -47,6 +48,10 @@ export const UserModel = {
   },
 
   updatePassword(id: number, password_hash: string) {
-    return db<UserRow>(TABLE).where({ id }).update({ password_hash, updated_at: db.fn.now() });
+    // Trocar a senha sempre satisfaz a exigência de troca obrigatória, senão o usuário
+    // ficaria bloqueado de novo no próximo login mesmo já tendo trocado.
+    return db<UserRow>(TABLE)
+      .where({ id })
+      .update({ password_hash, must_change_password: false, updated_at: db.fn.now() });
   },
 };

@@ -26,6 +26,9 @@ export const UserService = {
       email: input.email,
       password_hash,
       global_role: input.global_role,
+      // Senha provisória escolhida pelo admin, não pelo próprio usuário — força troca
+      // no primeiro login em vez de deixar como sugestão que ninguém segue.
+      must_change_password: true,
     });
     return sanitize(user);
   },

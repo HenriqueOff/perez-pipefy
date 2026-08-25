@@ -55,18 +55,30 @@ export const AuthController = {
     if (!user) {
       throw AppError.notFound();
     }
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.global_role });
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.global_role,
+      must_change_password: user.must_change_password,
+    });
   },
 
   async updateMe(req: Request, res: Response) {
     const user = await UserModel.update(req.user!.id, { name: req.body.name });
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.global_role });
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.global_role,
+      must_change_password: user.must_change_password,
+    });
   },
 
   async changePassword(req: Request, res: Response) {
     const { currentPassword, newPassword } = req.body;
-    await AuthService.changePassword(req.user!.id, currentPassword, newPassword);
-    res.status(204).send();
+    const result = await AuthService.changePassword(req.user!.id, currentPassword, newPassword);
+    res.json(result);
   },
 
   async forgotPassword(req: Request, res: Response) {

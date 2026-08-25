@@ -5,6 +5,7 @@ import { GlobalRole } from '../types/enums';
 export interface AccessTokenPayload {
   sub: number;
   role: GlobalRole;
+  mustChangePassword: boolean;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {

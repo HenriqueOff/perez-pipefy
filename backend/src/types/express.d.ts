@@ -6,6 +6,7 @@ declare global {
       user?: {
         id: number;
         role: GlobalRole;
+        mustChangePassword: boolean;
       };
     }
   }

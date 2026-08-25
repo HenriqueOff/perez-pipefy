@@ -26,7 +26,7 @@ export const AuthService = {
       throw AppError.unauthorized('Credenciais inválidas');
     }
 
-    const accessToken = signAccessToken({ sub: user.id, role: user.global_role });
+    const accessToken = signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: user.must_change_password });
 
     const refreshToken = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
@@ -35,7 +35,13 @@ export const AuthService = {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.global_role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.global_role,
+        must_change_password: user.must_change_password,
+      },
     };
   },
 
@@ -52,7 +58,7 @@ export const AuthService = {
 
     await RefreshTokenModel.revoke(record.id);
 
-    const accessToken = signAccessToken({ sub: user.id, role: user.global_role });
+    const accessToken = signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: user.must_change_password });
     const newRefreshToken = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
     await RefreshTokenModel.create(user.id, hashToken(newRefreshToken), expiresAt);
@@ -81,6 +87,10 @@ export const AuthService = {
     const password_hash = await bcrypt.hash(newPassword, 12);
     await UserModel.updatePassword(userId, password_hash);
     await RefreshTokenModel.revokeAllForUser(userId);
+
+    // Novo access token já sem mustChangePassword — sem isso, o token que o front tem em
+    // memória continuaria bloqueado até expirar, mesmo a senha já tendo sido trocada.
+    return { accessToken: signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: false }) };
   },
 
   async requestPasswordReset(email: string) {

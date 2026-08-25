@@ -29,6 +29,7 @@ export async function seed(knex: Knex): Promise<void> {
     password_hash,
     global_role: 'admin',
     active: true,
+    must_change_password: true,
   });
 
   // eslint-disable-next-line no-console

@@ -8,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: GlobalRole;
+  must_change_password: boolean;
 }
 
 export interface Pipeline {

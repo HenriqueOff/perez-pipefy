@@ -1,19 +1,39 @@
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import { createApp } from '../../src/app';
 import { db } from '../../src/config/db';
 
 const app = createApp();
 
-const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@perezimoveis.com';
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
+// Usuário próprio da suíte em vez de depender do admin seedado: esse banco é compartilhado
+// com dev/produção (sem DB efêmera de teste), e o admin seedado pode nem existir mais
+// (ex.: conta de bootstrap removida de propósito depois que admins reais já existiam).
+const TEST_ADMIN_EMAIL = 'zz-integration-test-admin@perezimoveis.com';
+const TEST_ADMIN_PASSWORD = 'TesteIntegracao123!';
 
 describe('fluxo completo de pipeline', () => {
   let accessToken: string;
+  let testAdminId: number;
   let pipelineId: number;
   let phase1Id: number;
   let phase2Id: number;
   let fieldId: number;
   let cardId: number;
+
+  beforeAll(async () => {
+    const password_hash = await bcrypt.hash(TEST_ADMIN_PASSWORD, 10);
+    const [user] = await db('users')
+      .insert({
+        name: 'ZZ Integration Test Admin',
+        email: TEST_ADMIN_EMAIL,
+        password_hash,
+        global_role: 'admin',
+        active: true,
+        must_change_password: false,
+      })
+      .returning('id');
+    testAdminId = user.id;
+  });
 
   afterAll(async () => {
     // Sem isso, cada execução deixa um pipeline "Captação de imóveis - teste" órfão no
@@ -22,11 +42,16 @@ describe('fluxo completo de pipeline', () => {
     if (pipelineId) {
       await db('pipelines').where({ id: pipelineId }).del();
     }
+    if (testAdminId) {
+      await db('users').where({ id: testAdminId }).del();
+    }
     await db.destroy();
   });
 
-  it('faz login com o admin seedado', async () => {
-    const res = await request(app).post('/api/v1/auth/login').send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+  it('faz login com o admin de teste', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD });
     expect(res.status).toBe(200);
     expect(res.body.accessToken).toBeDefined();
     accessToken = res.body.accessToken;

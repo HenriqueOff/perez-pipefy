@@ -18,6 +18,7 @@ export interface UserRow {
   password_hash: string;
   global_role: GlobalRole;
   active: boolean;
+  must_change_password: boolean;
   created_at: Date;
   updated_at: Date;
 }

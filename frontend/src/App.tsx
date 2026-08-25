@@ -11,11 +11,13 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminIntegrationsPage from './pages/AdminIntegrationsPage';
 import PublicFormPage from './pages/PublicFormPage';
 import Layout from './components/Layout';
+import ForcePasswordChangeGate from './components/ForcePasswordChangeGate';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="centered">Carregando...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.must_change_password) return <ForcePasswordChangeGate />;
   return <>{children}</>;
 }
 
