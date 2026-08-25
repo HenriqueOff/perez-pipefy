@@ -2014,6 +2014,16 @@ button svg {
   border-bottom: 1px solid var(--color-border);
 }
 
+.view-toggle-split {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.view-toggle-group {
+  display: flex;
+  gap: 20px;
+}
+
 .view-toggle-tab {
   background: none;
   border: none;

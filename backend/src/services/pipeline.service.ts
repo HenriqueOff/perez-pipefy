@@ -62,6 +62,12 @@ export const PipelineService = {
     return { ...pipeline, phases: phasesWithFields, members };
   },
 
+  /** Aba "Atividade recente" na home quando o usuário é admin geral — log do sistema
+   * inteiro, sem o filtro de membership que getOverviewForUser aplica. */
+  getSystemActivity(limit: number, offset: number) {
+    return CardHistoryModel.listAllRecent(limit, offset);
+  },
+
   // --- painel admin-only (engrenagem no board; ver requireGlobalRole('admin') nas rotas) ---
 
   async getAuditLog(pipelineId: number, limit: number, offset: number) {

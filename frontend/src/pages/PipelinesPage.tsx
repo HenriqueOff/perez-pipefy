@@ -68,10 +68,17 @@ function describeActivity(a: RecentActivityItem): string {
   }
 }
 
-type ContentTab = 'pipelines' | 'databases';
+type ContentTab = 'pipelines' | 'databases' | 'activity';
+
+const TAB_DESCRIPTIONS: Record<ContentTab, string> = {
+  pipelines: 'Seus pipelines e o que aconteceu recentemente.',
+  databases: 'Seus databases.',
+  activity: 'Log de atividade de todo o sistema.',
+};
 
 export default function PipelinesPage() {
   const { user } = useAuth();
+  const isGlobalAdmin = user?.role === 'admin';
   const [tab, setTab] = useState<ContentTab>('pipelines');
 
   return (
@@ -79,30 +86,41 @@ export default function PipelinesPage() {
       <div className="page-header">
         <div>
           <h1>Olá{user ? `, ${user.name.split(' ')[0]}` : ''}</h1>
-          <p className="muted">
-            {tab === 'pipelines' ? 'Seus pipelines e o que aconteceu recentemente.' : 'Seus databases.'}
-          </p>
+          <p className="muted">{TAB_DESCRIPTIONS[tab]}</p>
         </div>
       </div>
 
-      <div className="view-toggle" style={{ marginBottom: 20 }}>
-        <button
-          type="button"
-          className={`view-toggle-tab ${tab === 'pipelines' ? 'view-toggle-tab-active' : ''}`}
-          onClick={() => setTab('pipelines')}
-        >
-          Pipelines
-        </button>
-        <button
-          type="button"
-          className={`view-toggle-tab ${tab === 'databases' ? 'view-toggle-tab-active' : ''}`}
-          onClick={() => setTab('databases')}
-        >
-          Databases
-        </button>
+      <div className="view-toggle view-toggle-split" style={{ marginBottom: 20 }}>
+        <div className="view-toggle-group">
+          <button
+            type="button"
+            className={`view-toggle-tab ${tab === 'pipelines' ? 'view-toggle-tab-active' : ''}`}
+            onClick={() => setTab('pipelines')}
+          >
+            Pipelines
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-tab ${tab === 'databases' ? 'view-toggle-tab-active' : ''}`}
+            onClick={() => setTab('databases')}
+          >
+            Databases
+          </button>
+        </div>
+        {isGlobalAdmin && (
+          <button
+            type="button"
+            className={`view-toggle-tab ${tab === 'activity' ? 'view-toggle-tab-active' : ''}`}
+            onClick={() => setTab('activity')}
+          >
+            Atividade recente
+          </button>
+        )}
       </div>
 
-      {tab === 'pipelines' ? <PipelinesTab /> : <DatabasesTab />}
+      {tab === 'pipelines' && <PipelinesTab />}
+      {tab === 'databases' && <DatabasesTab />}
+      {tab === 'activity' && isGlobalAdmin && <SystemActivityTab />}
     </div>
   );
 }
@@ -135,7 +153,6 @@ function PipelinesTab() {
   }
 
   const pipelines: PipelineOverviewItem[] = overview?.pipelines ?? [];
-  const recentActivity: RecentActivityItem[] = overview?.recentActivity ?? [];
 
   return (
     <>
@@ -205,28 +222,50 @@ function PipelinesTab() {
           <p>Nenhum pipeline ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
         )}
       </div>
+    </>
+  );
+}
 
-      {recentActivity.length > 0 && (
-        <>
-          <h2 className="section-title">Atividade recente</h2>
-          <ul className="timeline-list">
-            {recentActivity.map((a) => (
-              <li key={a.id} className="timeline-item">
-                <span className={`timeline-icon timeline-icon-${a.event_type}`} aria-hidden>
-                  {activityIcon(a.event_type)}
+function SystemActivityTab() {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['pipelines-system-activity'],
+    queryFn: () => PipelinesApi.systemActivity({ limit: 100 }),
+  });
+
+  const activity: RecentActivityItem[] = data ?? [];
+
+  return (
+    <>
+      {isLoading && <p>Carregando...</p>}
+      {isError && (
+        <p className="error">
+          Não foi possível carregar o log de atividade.{' '}
+          <button className="link-button" onClick={() => refetch()}>
+            Tentar de novo
+          </button>
+        </p>
+      )}
+
+      {!isLoading && !isError && activity.length === 0 && <p>Nenhuma atividade registrada ainda.</p>}
+
+      {activity.length > 0 && (
+        <ul className="timeline-list">
+          {activity.map((a) => (
+            <li key={a.id} className="timeline-item">
+              <span className={`timeline-icon timeline-icon-${a.event_type}`} aria-hidden>
+                {activityIcon(a.event_type)}
+              </span>
+              <div className="timeline-content">
+                <span>
+                  {describeActivity(a)} —{' '}
+                  <Link to={`/pipelines/${a.pipeline_id}?card=${a.card_id}`}>{a.card_title}</Link>{' '}
+                  <span className="muted">({a.pipeline_name})</span>
                 </span>
-                <div className="timeline-content">
-                  <span>
-                    {describeActivity(a)} —{' '}
-                    <Link to={`/pipelines/${a.pipeline_id}?card=${a.card_id}`}>{a.card_title}</Link>{' '}
-                    <span className="muted">({a.pipeline_name})</span>
-                  </span>
-                  <span className="muted">{new Date(a.created_at).toLocaleString('pt-BR')}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+                <span className="muted">{new Date(a.created_at).toLocaleString('pt-BR')}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </>
   );

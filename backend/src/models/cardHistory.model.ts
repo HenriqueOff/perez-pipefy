@@ -59,6 +59,40 @@ export const CardHistoryModel = {
       );
   },
 
+  /** Feed global de atividade, sem filtro de membership — admin-only (aba "Atividade
+   * recente" na home), mesmo formato de listRecentForPipelines mas cruzando todas as
+   * pipelines do sistema, não só as do usuário logado. */
+  listAllRecent(limit: number, offset: number) {
+    return db(TABLE)
+      .join('cards', 'cards.id', `${TABLE}.card_id`)
+      .join('pipelines', 'pipelines.id', 'cards.pipeline_id')
+      .leftJoin('users', 'users.id', `${TABLE}.user_id`)
+      .orderBy(`${TABLE}.created_at`, 'desc')
+      .limit(limit)
+      .offset(offset)
+      .select<
+        {
+          id: number;
+          event_type: CardHistoryEventType;
+          created_at: Date;
+          card_id: number;
+          card_title: string;
+          pipeline_id: number;
+          pipeline_name: string;
+          user_name: string | null;
+        }[]
+      >(
+        `${TABLE}.id`,
+        `${TABLE}.event_type`,
+        `${TABLE}.created_at`,
+        'cards.id as card_id',
+        'cards.title as card_title',
+        'cards.pipeline_id',
+        'pipelines.name as pipeline_name',
+        'users.name as user_name'
+      );
+  },
+
   /** Feed de auditoria de um único pipeline — mesmo formato de listRecentForPipelines,
    * usado no painel admin-only do pipe (engrenagem no board), paginado. */
   listByPipeline(pipelineId: number, limit: number, offset: number) {

@@ -14,6 +14,12 @@ export const PipelineController = {
     res.json(overview);
   },
 
+  async systemActivity(req: Request, res: Response) {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
+    res.json(await PipelineService.getSystemActivity(limit, offset));
+  },
+
   async detail(req: Request, res: Response) {
     res.json(await PipelineService.getDetail(Number(req.params.pipelineId), req.user!.id));
   },
