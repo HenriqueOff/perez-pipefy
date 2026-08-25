@@ -91,7 +91,6 @@ export default function PipelineMembersModal({ pipelineId, members, canManage, o
                 <Avatar name={m.name} />
                 <div className="member-info">
                   <span className="member-name">{m.name}</span>
-                  <span className="muted">{m.email}</span>
                 </div>
                 {canManage ? (
                   <select
@@ -125,7 +124,7 @@ export default function PipelineMembersModal({ pipelineId, members, canManage, o
                   <option value="">Selecione um usuário...</option>
                   {availableUsers.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.name} ({u.email})
+                      {u.name}
                     </option>
                   ))}
                 </select>
