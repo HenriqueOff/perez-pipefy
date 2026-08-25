@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import Icon from './Icon';
@@ -22,6 +22,7 @@ export default function AttachmentList({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const { data: attachments } = useQuery({
     queryKey: ['attachments', pipelineId, cardId],
@@ -61,6 +62,25 @@ export default function AttachmentList({
     e.target.value = '';
   }
 
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
+    if (!canEdit) return;
+    e.preventDefault();
+    setIsDraggingOver(true);
+  }
+
+  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setIsDraggingOver(false);
+  }
+
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    if (!canEdit) return;
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadMutation.mutate(file);
+  }
+
   async function handleDownload(attachmentId: number, fileName: string) {
     setDownloadingId(attachmentId);
     try {
@@ -81,8 +101,14 @@ export default function AttachmentList({
   }
 
   return (
-    <div className="attachment-section">
+    <div
+      className={`attachment-section ${isDraggingOver ? 'attachment-section-drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {error && <p className="error">{error}</p>}
+      {isDraggingOver && <p className="attachment-drop-hint">Solte o arquivo aqui pra anexar</p>}
       <ul className="attachment-list">
         {attachments?.map((a) => (
           <li key={a.id} className="attachment-row">

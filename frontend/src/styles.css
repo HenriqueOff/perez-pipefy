@@ -1613,6 +1613,22 @@ hr.div {
 
 .attachment-section {
   margin-bottom: 16px;
+  border: 1.5px dashed transparent;
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.attachment-section-drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.attachment-drop-hint {
+  text-align: center;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
 }
 
 .attachment-list {
