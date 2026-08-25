@@ -1,8 +1,16 @@
 import type { Knex } from 'knex';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@perezimoveis.com';
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!';
+// Este repositório é público — um fallback fixo aqui seria uma senha de admin
+// visível pra qualquer pessoa no mundo. Fica fixo só em dev (conveniência local);
+// em produção, sem SEED_ADMIN_PASSWORD definido no ambiente, gera uma senha
+// aleatória (impressa uma única vez no log de boot) em vez de usar um valor
+// conhecido publicamente.
+const isProduction = process.env.NODE_ENV === 'production';
+const ADMIN_PASSWORD =
+  process.env.SEED_ADMIN_PASSWORD ?? (isProduction ? crypto.randomBytes(18).toString('base64url') : 'ChangeMe123!');
 
 export async function seed(knex: Knex): Promise<void> {
   const existing = await knex('users').where({ email: ADMIN_EMAIL }).first();
