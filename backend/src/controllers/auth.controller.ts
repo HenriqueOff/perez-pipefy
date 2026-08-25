@@ -26,7 +26,7 @@ function setRefreshCookie(res: Response, token: string) {
 export const AuthController = {
   async login(req: Request, res: Response) {
     const { email, password } = req.body;
-    const result = await AuthService.login(email, password);
+    const result = await AuthService.login(email, password, req.headers['user-agent']);
     setRefreshCookie(res, result.refreshToken);
     res.json({ accessToken: result.accessToken, user: result.user });
   },
@@ -36,7 +36,7 @@ export const AuthController = {
     if (!token) {
       throw AppError.unauthorized('Refresh token ausente');
     }
-    const result = await AuthService.refresh(token);
+    const result = await AuthService.refresh(token, req.headers['user-agent']);
     setRefreshCookie(res, result.refreshToken);
     res.json({ accessToken: result.accessToken });
   },
@@ -90,6 +90,17 @@ export const AuthController = {
   async resetPassword(req: Request, res: Response) {
     const { token, newPassword } = req.body;
     await AuthService.resetPassword(token, newPassword);
+    res.status(204).send();
+  },
+
+  async listSessions(req: Request, res: Response) {
+    const currentToken = req.cookies?.[REFRESH_COOKIE];
+    const sessions = await AuthService.listSessions(req.user!.id, currentToken);
+    res.json(sessions);
+  },
+
+  async revokeSession(req: Request, res: Response) {
+    await AuthService.revokeSession(req.user!.id, Number(req.params.sessionId));
     res.status(204).send();
   },
 };

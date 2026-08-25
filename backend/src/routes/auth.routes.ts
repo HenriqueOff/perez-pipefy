@@ -37,5 +37,7 @@ router.post(
   validateBody(resetPasswordSchema),
   asyncHandler(AuthController.resetPassword)
 );
+router.get('/sessions', authenticate, asyncHandler(AuthController.listSessions));
+router.delete('/sessions/:sessionId', authenticate, asyncHandler(AuthController.revokeSession));
 
 export default router;

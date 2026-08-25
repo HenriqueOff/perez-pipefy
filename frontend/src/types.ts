@@ -11,6 +11,14 @@ export interface User {
   must_change_password: boolean;
 }
 
+export interface Session {
+  id: number;
+  user_agent: string | null;
+  created_at: string;
+  expires_at: string;
+  is_current: boolean;
+}
+
 export interface Pipeline {
   id: number;
   name: string;

@@ -15,7 +15,7 @@ function hashToken(token: string): string {
 }
 
 export const AuthService = {
-  async login(email: string, password: string) {
+  async login(email: string, password: string, userAgent?: string) {
     const user = await UserModel.findByEmail(email);
     if (!user || !user.active) {
       throw AppError.unauthorized('Credenciais inválidas');
@@ -30,7 +30,7 @@ export const AuthService = {
 
     const refreshToken = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
-    await RefreshTokenModel.create(user.id, hashToken(refreshToken), expiresAt);
+    await RefreshTokenModel.create(user.id, hashToken(refreshToken), expiresAt, userAgent);
 
     return {
       accessToken,
@@ -45,7 +45,7 @@ export const AuthService = {
     };
   },
 
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string, userAgent?: string) {
     const record = await RefreshTokenModel.findValidByHash(hashToken(refreshToken));
     if (!record) {
       throw AppError.unauthorized('Refresh token inválido ou expirado');
@@ -61,7 +61,10 @@ export const AuthService = {
     const accessToken = signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: user.must_change_password });
     const newRefreshToken = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
-    await RefreshTokenModel.create(user.id, hashToken(newRefreshToken), expiresAt);
+    // Mantém o user_agent original da sessão em vez do que renovou o token — o refresh
+    // acontece em background sem o usuário agir, então o agent "correto" pra exibir na
+    // tela de sessões é o do login original, não o de quem/o-que disparou essa renovação.
+    await RefreshTokenModel.create(user.id, hashToken(newRefreshToken), expiresAt, record.user_agent ?? userAgent);
 
     return { accessToken, refreshToken: newRefreshToken };
   },
@@ -120,5 +123,25 @@ export const AuthService = {
     await UserModel.updatePassword(record.user_id, password_hash);
     await PasswordResetTokenModel.markUsed(record.id);
     await RefreshTokenModel.revokeAllForUser(record.user_id);
+  },
+
+  async listSessions(userId: number, currentRefreshToken?: string) {
+    const currentHash = currentRefreshToken ? hashToken(currentRefreshToken) : null;
+    const sessions = await RefreshTokenModel.listActiveForUser(userId);
+    return sessions.map((s) => ({
+      id: s.id,
+      user_agent: s.user_agent,
+      created_at: s.created_at,
+      expires_at: s.expires_at,
+      is_current: s.token_hash === currentHash,
+    }));
+  },
+
+  async revokeSession(userId: number, sessionId: number) {
+    const session = await RefreshTokenModel.findById(sessionId);
+    if (!session || session.user_id !== userId) {
+      throw AppError.notFound('Sessão não encontrada');
+    }
+    await RefreshTokenModel.revoke(sessionId);
   },
 };
