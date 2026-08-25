@@ -13,8 +13,11 @@ const ADMIN_PASSWORD =
   process.env.SEED_ADMIN_PASSWORD ?? (isProduction ? crypto.randomBytes(18).toString('base64url') : 'ChangeMe123!');
 
 export async function seed(knex: Knex): Promise<void> {
-  const existing = await knex('users').where({ email: ADMIN_EMAIL }).first();
-  if (existing) {
+  // Só faz sentido criar um admin de bootstrap se o sistema ainda não tem NENHUM —
+  // checar só o e-mail fixo fazia esse admin ressuscitar a cada deploy sempre que
+  // alguém apagava a conta, mesmo já existindo outros admins reais no banco.
+  const anyAdmin = await knex('users').where({ global_role: 'admin' }).first();
+  if (anyAdmin) {
     return;
   }
 
