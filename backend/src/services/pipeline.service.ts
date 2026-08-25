@@ -4,6 +4,7 @@ import { CardHistoryModel } from '../models/cardHistory.model';
 import { PipelineModel } from '../models/pipeline.model';
 import { PhaseModel } from '../models/phase.model';
 import { CustomFieldModel } from '../models/customField.model';
+import { DatabaseModel } from '../models/database.model';
 import { UserModel } from '../models/user.model';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
@@ -259,6 +260,7 @@ export const PipelineService = {
       type: string;
       options?: string[];
       formula?: string;
+      linked_database_id?: number;
       min_view_role?: PipelineRole | null;
       min_edit_role?: PipelineRole | null;
       required?: boolean;
@@ -279,6 +281,15 @@ export const PipelineService = {
       }
       await FormulaFieldService.validateFormula(phase.pipeline_id, input.key, input.formula);
     }
+    if (input.type === 'database_link') {
+      if (!input.linked_database_id) {
+        throw new AppError('Campos de conexão com database precisam de um database selecionado', 422);
+      }
+      const linkedDatabase = await DatabaseModel.findById(input.linked_database_id);
+      if (!linkedDatabase) {
+        throw AppError.notFound('Database selecionado não encontrado');
+      }
+    }
     if (!roleAtLeast(input.min_edit_role ?? 'editor', input.min_view_role ?? 'viewer')) {
       throw new AppError('O papel mínimo pra editar não pode ser menor que o papel mínimo pra ver o campo', 422);
     }
@@ -296,6 +307,7 @@ export const PipelineService = {
       type: input.type as never,
       options: input.options ?? null,
       formula: input.type === 'formula' ? input.formula ?? null : null,
+      linked_database_id: input.type === 'database_link' ? input.linked_database_id ?? null : null,
       min_view_role: input.min_view_role ?? null,
       min_edit_role: input.min_edit_role ?? null,
       required: input.required ?? false,

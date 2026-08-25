@@ -32,6 +32,7 @@ export const CustomFieldModel = {
     min_edit_role?: PipelineRole | null;
     required?: boolean;
     position: number;
+    linked_database_id?: number | null;
   }) {
     const payload = { ...input, options: input.options ? JSON.stringify(input.options) : null };
     return db<CustomFieldRow>(TABLE)

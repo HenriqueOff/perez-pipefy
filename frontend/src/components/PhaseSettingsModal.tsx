@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
+import { DatabasesApi } from '../api/databases';
 import { CustomField, CustomFieldType, Phase, PipelineRole } from '../types';
 import Icon from './Icon';
 
@@ -44,6 +45,7 @@ const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   boolean: 'Sim/Não',
   select: 'Lista de opções',
   formula: 'Fórmula',
+  database_link: 'Conexão com database',
 };
 
 const FORMULA_HELP = 'Use as keys dos campos do pipeline como variáveis. Operadores: + - * / %. Funções: ROUND(x, casas), MIN(a, b), MAX(a, b), ABS(x).';
@@ -321,9 +323,16 @@ function AddFieldForm({
   const [required, setRequired] = useState(false);
   const [optionsText, setOptionsText] = useState('');
   const [formula, setFormula] = useState('');
+  const [linkedDatabaseId, setLinkedDatabaseId] = useState('');
   const [keyTouched, setKeyTouched] = useState(false);
   const [minViewRole, setMinViewRole] = useState<PipelineRole | ''>('');
   const [minEditRole, setMinEditRole] = useState<PipelineRole | ''>('');
+
+  const { data: databases } = useQuery({
+    queryKey: ['databases'],
+    queryFn: DatabasesApi.list,
+    enabled: type === 'database_link',
+  });
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -334,6 +343,7 @@ function AddFieldForm({
         required,
         options: type === 'select' ? optionsText.split(',').map((o) => o.trim()).filter(Boolean) : undefined,
         formula: type === 'formula' ? formula.trim() : undefined,
+        linked_database_id: type === 'database_link' ? Number(linkedDatabaseId) : undefined,
         min_view_role: minViewRole || null,
         min_edit_role: minEditRole || null,
       }),
@@ -353,6 +363,7 @@ function AddFieldForm({
     e.preventDefault();
     if (!label.trim() || !key.trim()) return;
     if (type === 'formula' && !formula.trim()) return;
+    if (type === 'database_link' && !linkedDatabaseId) return;
     createMutation.mutate();
   }
 
@@ -399,6 +410,23 @@ function AddFieldForm({
               placeholder="valor_venda * 0.06"
             />
             <span className="muted">{FORMULA_HELP}</span>
+          </label>
+        )}
+        {type === 'database_link' && (
+          <label className="field-input">
+            Database vinculado
+            <select value={linkedDatabaseId} onChange={(e) => setLinkedDatabaseId(e.target.value)}>
+              <option value="">Selecione um database...</option>
+              {(databases ?? []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <span className="muted">
+              Quem preencher este campo escolhe um registro desse database. Outros campos desta fase com a mesma
+              key de um campo do database são preenchidos automaticamente.
+            </span>
           </label>
         )}
         <RoleSelect label="Quem pode ver" value={minViewRole} onChange={setMinViewRole} />

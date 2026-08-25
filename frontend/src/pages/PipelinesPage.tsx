@@ -232,6 +232,23 @@ function PipelinesTab() {
   );
 }
 
+const NO_CATEGORY = 'Sem setor';
+
+function groupByCategory(list: Database[]): [string, Database[]][] {
+  const groups = new Map<string, Database[]>();
+  for (const database of list) {
+    const category = database.category?.trim() || NO_CATEGORY;
+    const group = groups.get(category) ?? [];
+    group.push(database);
+    groups.set(category, group);
+  }
+  return [...groups.entries()].sort(([a], [b]) => {
+    if (a === NO_CATEGORY) return 1;
+    if (b === NO_CATEGORY) return -1;
+    return a.localeCompare(b, 'pt-BR');
+  });
+}
+
 function DatabasesTab() {
   const queryClient = useQueryClient();
   const { data: databases, isLoading, isError, refetch } = useQuery({
@@ -239,13 +256,15 @@ function DatabasesTab() {
     queryFn: DatabasesApi.list,
   });
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [creating, setCreating] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (input: { name: string }) => DatabasesApi.create(input),
+    mutationFn: (input: { name: string; category?: string }) => DatabasesApi.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['databases'] });
       setName('');
+      setCategory('');
       setCreating(false);
     },
   });
@@ -253,21 +272,34 @@ function DatabasesTab() {
   function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    createMutation.mutate({ name: name.trim() });
+    createMutation.mutate({ name: name.trim(), category: category.trim() || undefined });
   }
 
   const list: Database[] = databases ?? [];
+  const existingCategories = [...new Set(list.map((d) => d.category?.trim()).filter(Boolean))] as string[];
+  const groups = groupByCategory(list);
 
   return (
     <>
       {creating && (
         <form className="inline-form" onSubmit={handleCreate}>
           <input
-            placeholder="Nome do database (ex: Clientes)"
+            placeholder="Nome do database (ex: Locatários)"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
+          <input
+            placeholder="Setor (ex: Pessoas)"
+            list="database-categories"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
+          <datalist id="database-categories">
+            {existingCategories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <button type="submit" disabled={createMutation.isPending}>
             Criar
           </button>
@@ -287,31 +319,34 @@ function DatabasesTab() {
         </p>
       )}
 
-      <div className="pipeline-grid">
-        <button type="button" className="pipeline-card pipeline-card-create" onClick={() => setCreating((v) => !v)}>
-          <span className="pipeline-card-create-icon">+</span>
-          Criar database
+      {!creating && (
+        <button type="button" className="secondary-button" style={{ marginBottom: 20 }} onClick={() => setCreating(true)}>
+          + Criar database
         </button>
-        {list.map((database) => {
-          const palette = paletteFor(database.name);
-          return (
-            <Link
-              to={`/databases/${database.id}`}
-              key={database.id}
-              className="pipeline-card"
-              style={{ background: palette.bg }}
-            >
-              <span className="pipeline-card-icon" style={{ background: palette.icon }}>
-                {database.name.charAt(0).toUpperCase()}
-              </span>
-              <h3>{database.name}</h3>
-            </Link>
-          );
-        })}
-        {!isLoading && !isError && list.length === 0 && (
-          <p>Nenhum database ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
-        )}
-      </div>
+      )}
+
+      {groups.map(([groupName, groupDatabases]) => (
+        <section key={groupName} className="database-section">
+          <h2 className="database-section-title">{groupName}</h2>
+          <div className="database-grid">
+            {groupDatabases.map((database) => {
+              const palette = paletteFor(database.name);
+              return (
+                <Link to={`/databases/${database.id}`} key={database.id} className="database-tile">
+                  <span className="database-tile-icon" style={{ background: palette.icon }}>
+                    {database.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="database-tile-name">{database.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
+      {!isLoading && !isError && list.length === 0 && (
+        <p>Nenhum database ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
+      )}
     </>
   );
 }

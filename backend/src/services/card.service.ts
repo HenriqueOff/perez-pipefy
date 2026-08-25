@@ -6,13 +6,18 @@ import { CardHistoryModel } from '../models/cardHistory.model';
 import { CardAssigneeModel } from '../models/cardAssignee.model';
 import { ChecklistItemModel } from '../models/checklistItem.model';
 import { CustomFieldModel } from '../models/customField.model';
+import { DatabaseFieldModel } from '../models/databaseField.model';
+import { DatabaseRecordModel } from '../models/databaseRecord.model';
+import { DatabaseRecordFieldValueModel } from '../models/databaseRecordFieldValue.model';
 import { LabelModel } from '../models/label.model';
 import { PhaseModel } from '../models/phase.model';
 import { AutomationService } from './automation.service';
 import { FormulaFieldService } from './formulaField.service';
 import { NotificationService } from './notification.service';
+import { CustomFieldRow } from '../types/entities';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
+import { resolveDatabaseActorRole } from '../utils/databaseRole';
 import { requiredFieldsMissing, validateFieldValue } from '../utils/fieldValidation';
 import { logger } from '../utils/logger';
 import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
@@ -35,12 +40,100 @@ async function runTriggersSafely(pipelineId: number, context: TriggerContext, ac
   );
 }
 
+// Pro frontend não precisar de acesso ao database só pra mostrar um nome em vez de um id
+// cru: anexa o título do registro vinculado a cada valor de campo database_link. Value em
+// si continua sendo só o id (é o que a UI reenvia ao salvar).
+async function enrichDatabaseLinkValues<T extends { custom_field_id: number; value: unknown }>(
+  fieldValues: T[],
+  allFields: CustomFieldRow[]
+): Promise<(T & { linkedRecordTitle?: string | null })[]> {
+  const fieldById = new Map(allFields.map((f) => [f.id, f]));
+  return Promise.all(
+    fieldValues.map(async (fv) => {
+      const field = fieldById.get(fv.custom_field_id);
+      if (field?.type !== 'database_link' || fv.value === null || fv.value === undefined) {
+        return fv;
+      }
+      const record = await DatabaseRecordModel.findById(Number(fv.value));
+      return { ...fv, linkedRecordTitle: record?.title ?? null };
+    })
+  );
+}
+
 async function getFirstPhase(pipelineId: number) {
   const phases = await PhaseModel.listByPipeline(pipelineId);
   if (phases.length === 0) {
     throw new AppError('Este pipeline ainda não possui fases configuradas', 422);
   }
   return phases.find((p) => p.is_initial) ?? phases[0];
+}
+
+// Campo 'database_link' não tem validação de formato/opções como os outros tipos — o que
+// importa é que o valor seja o id de um registro que exista de fato no database vinculado
+// ao campo, e que quem está editando tenha pelo menos 'viewer' nesse database (a permissão
+// do pipe não dá acesso automático a um database de outro dono).
+async function validateDatabaseLinkValue(field: CustomFieldRow, value: unknown, userId: number): Promise<void> {
+  if (value === null || value === undefined || value === '') {
+    if (field.required) {
+      throw new AppError(`O campo "${field.label}" é obrigatório`, 422);
+    }
+    return;
+  }
+  const recordId = Number(value);
+  if (!Number.isInteger(recordId) || recordId <= 0 || !field.linked_database_id) {
+    throw new AppError(`O campo "${field.label}" precisa de um registro válido`, 422);
+  }
+  const record = await DatabaseRecordModel.findById(recordId);
+  if (!record || record.database_id !== field.linked_database_id) {
+    throw new AppError(`Registro não encontrado no database vinculado ao campo "${field.label}"`, 422);
+  }
+  const actorDbRole = await resolveDatabaseActorRole(field.linked_database_id, userId);
+  if (!roleAtLeast(actorDbRole, 'viewer')) {
+    throw AppError.forbidden(`Você não tem acesso ao database vinculado ao campo "${field.label}"`);
+  }
+}
+
+// "Puxar dado do Database pra dentro do pipe": ao escolher um registro num campo
+// database_link, qualquer OUTRO campo customizado da mesma fase cuja key bata com a key de
+// um campo do database vinculado é preenchido automaticamente com o valor daquele registro.
+// Convenção por key (não por um mapeamento explícito) — igual a como os outros dois pontos
+// desse app que reaproveitam texto por key já funcionam (formulário público, import).
+async function autofillFromDatabaseLink(
+  cardId: number,
+  linkField: CustomFieldRow,
+  recordId: number,
+  siblingFields: CustomFieldRow[],
+  userId: number,
+  trx: Knex.Transaction
+): Promise<{ fieldId: number; value: unknown }[]> {
+  const dbFields = await DatabaseFieldModel.listByDatabase(linkField.linked_database_id!);
+  const dbFieldByKey = new Map(dbFields.map((f) => [f.key, f]));
+  const recordValues = await DatabaseRecordFieldValueModel.listByRecord(recordId);
+  const valueByDbFieldId = new Map(recordValues.map((v) => [v.database_field_id, v.value]));
+
+  const applied: { fieldId: number; value: unknown }[] = [];
+  for (const sibling of siblingFields) {
+    if (sibling.id === linkField.id || sibling.type === 'database_link' || sibling.type === 'formula') continue;
+    const dbField = dbFieldByKey.get(sibling.key);
+    if (!dbField || !valueByDbFieldId.has(dbField.id)) continue;
+
+    const value = valueByDbFieldId.get(dbField.id);
+    const existing = await CardFieldValueModel.findOne(cardId, sibling.id, trx);
+    await CardFieldValueModel.upsert(cardId, sibling.id, value, trx);
+    await CardHistoryModel.record(
+      {
+        card_id: cardId,
+        user_id: userId,
+        event_type: 'field_updated',
+        field_id: sibling.id,
+        old_value: existing?.value ?? null,
+        new_value: value,
+      },
+      trx
+    );
+    applied.push({ fieldId: sibling.id, value });
+  }
+  return applied;
 }
 
 async function applyFieldValues(
@@ -63,7 +156,12 @@ async function applyFieldValues(
     if (!roleAtLeast(actorRole, field.min_edit_role ?? 'editor')) {
       throw AppError.forbidden(`Você não tem permissão para editar o campo "${field.label}"`);
     }
-    validateFieldValue(field, value);
+
+    if (field.type === 'database_link') {
+      await validateDatabaseLinkValue(field, value, userId);
+    } else {
+      validateFieldValue(field, value);
+    }
 
     const existing = await CardFieldValueModel.findOne(cardId, field.id, trx);
     await CardFieldValueModel.upsert(cardId, field.id, value, trx);
@@ -81,6 +179,11 @@ async function applyFieldValues(
     );
 
     applied.push({ fieldId: field.id, value });
+
+    if (field.type === 'database_link' && value !== null && value !== undefined && value !== '') {
+      const autofilled = await autofillFromDatabaseLink(cardId, field, Number(value), customFields, userId, trx);
+      applied.push(...autofilled);
+    }
   }
 
   return applied;
@@ -148,7 +251,10 @@ export const CardService = {
     );
     // uma entrada de histórico de field_updated carrega old_value/new_value diretamente —
     // se não filtrar aqui também, o valor de um campo restrito vaza pela timeline.
-    const visibleFieldValues = fieldValues.filter((v) => visibleFieldIds.has(v.custom_field_id));
+    const visibleFieldValues = await enrichDatabaseLinkValues(
+      fieldValues.filter((v) => visibleFieldIds.has(v.custom_field_id)),
+      allFields
+    );
     const visibleHistory = history.filter((h) => h.field_id == null || visibleFieldIds.has(h.field_id));
     const checklistSummary = { total: checklist.length, done: checklist.filter((i) => i.done).length };
     return { ...card, fieldValues: visibleFieldValues, history: visibleHistory, labels, assignees, checklistSummary };

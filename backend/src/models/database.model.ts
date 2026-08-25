@@ -20,14 +20,14 @@ export const DatabaseModel = {
       .orderBy('name');
   },
 
-  create(input: { name: string; description?: string | null; created_by: number }) {
+  create(input: { name: string; description?: string | null; category?: string | null; created_by: number }) {
     return db<DatabaseRow>(TABLE)
       .insert(input)
       .returning('*')
       .then((rows) => rows[0]);
   },
 
-  update(id: number, changes: Partial<Pick<DatabaseRow, 'name' | 'description' | 'archived'>>) {
+  update(id: number, changes: Partial<Pick<DatabaseRow, 'name' | 'description' | 'category' | 'archived'>>) {
     return db<DatabaseRow>(TABLE)
       .where({ id })
       .update({ ...changes, updated_at: db.fn.now() })

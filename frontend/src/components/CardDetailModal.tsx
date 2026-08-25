@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
+import { DatabasesApi } from '../api/databases';
 import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
 import { roleAtLeast } from '../utils/roles';
 import AttachmentList from './AttachmentList';
@@ -90,6 +91,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
   if (!card) return null;
 
   const valuesByFieldId = new Map(card.fieldValues.map((v) => [v.custom_field_id, v.value]));
+  const linkedTitleByFieldId = new Map(card.fieldValues.map((v) => [v.custom_field_id, v.linkedRecordTitle]));
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -151,6 +153,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
                 key={field.id}
                 field={field}
                 value={valuesByFieldId.get(field.id)}
+                linkedRecordTitle={linkedTitleByFieldId.get(field.id)}
                 onCommit={(value) => handleFieldBlur(field, value)}
                 disabled={!canEdit || !roleAtLeast(userRole, field.min_edit_role ?? 'editor')}
               />
@@ -249,20 +252,46 @@ function eventIcon(eventType: string): string {
 function FieldInput({
   field,
   value,
+  linkedRecordTitle,
   onCommit,
   disabled,
 }: {
   field: CustomField;
   value: unknown;
+  linkedRecordTitle?: string | null;
   onCommit: (value: unknown) => void;
   disabled?: boolean;
 }) {
   const [local, setLocal] = useState(value ?? (field.type === 'boolean' ? false : ''));
 
+  const { data: linkedRecordsData } = useQuery({
+    queryKey: ['database-records', field.linked_database_id],
+    queryFn: () => DatabasesApi.listRecords(field.linked_database_id!),
+    enabled: field.type === 'database_link' && !!field.linked_database_id,
+  });
+
   return (
     <label className="field-input">
       {field.label}
       {field.required && <span className="required">*</span>}
+      {field.type === 'database_link' && (
+        <select
+          value={local ? String(local) : ''}
+          onChange={(e) => {
+            const next = e.target.value ? Number(e.target.value) : null;
+            setLocal(next ?? '');
+            onCommit(next);
+          }}
+          disabled={disabled}
+        >
+          <option value="">{linkedRecordTitle ? linkedRecordTitle : 'Selecione um registro...'}</option>
+          {(linkedRecordsData?.records ?? []).map((record) => (
+            <option key={record.id} value={record.id}>
+              {record.title}
+            </option>
+          ))}
+        </select>
+      )}
       {field.type === 'text' && (
         <input
           value={String(local ?? '')}

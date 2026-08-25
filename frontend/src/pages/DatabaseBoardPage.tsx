@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import DatabaseMembersModal from '../components/DatabaseMembersModal';
 import DatabaseFieldsModal from '../components/DatabaseFieldsModal';
 import DatabaseRecordModal from '../components/DatabaseRecordModal';
+import DatabaseSettingsModal from '../components/DatabaseSettingsModal';
 
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined || value === '') return '—';
@@ -27,6 +28,7 @@ export default function DatabaseBoardPage() {
 
   const [showMembers, setShowMembers] = useState(false);
   const [showFields, setShowFields] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
   const [creatingRecord, setCreatingRecord] = useState(false);
 
@@ -51,6 +53,11 @@ export default function DatabaseBoardPage() {
           {canManage && (
             <button className="secondary-button" onClick={() => setShowFields(true)}>
               Campos
+            </button>
+          )}
+          {canManage && (
+            <button className="secondary-button" onClick={() => setShowSettings(true)}>
+              Configurações
             </button>
           )}
           {canEdit && <button onClick={() => setCreatingRecord(true)}>+ Novo registro</button>}
@@ -111,6 +118,8 @@ export default function DatabaseBoardPage() {
           onClose={() => setShowFields(false)}
         />
       )}
+
+      {showSettings && <DatabaseSettingsModal database={database} onClose={() => setShowSettings(false)} />}
 
       {creatingRecord && (
         <DatabaseRecordModal

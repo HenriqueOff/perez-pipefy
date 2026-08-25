@@ -1,6 +1,6 @@
 export type GlobalRole = 'admin' | 'member';
 export type PipelineRole = 'owner' | 'manager' | 'editor' | 'viewer';
-export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'formula';
+export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'formula' | 'database_link';
 export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
 
 export interface User {
@@ -24,6 +24,7 @@ export interface Database {
   id: number;
   name: string;
   description: string | null;
+  category: string | null;
   archived: boolean;
   created_by: number;
 }
@@ -132,6 +133,7 @@ export interface CustomField {
   type: CustomFieldType;
   options: string[] | null;
   formula: string | null;
+  linked_database_id: number | null;
   min_view_role: PipelineRole | null;
   min_edit_role: PipelineRole | null;
   required: boolean;
@@ -172,6 +174,9 @@ export interface CardFieldValue {
   card_id: number;
   custom_field_id: number;
   value: unknown;
+  // Só presente pra campos do tipo 'database_link' — título do registro apontado por
+  // `value` (que continua sendo o id cru), resolvido pelo backend.
+  linkedRecordTitle?: string | null;
 }
 
 export interface Label {

@@ -75,6 +75,7 @@ export const PipelinesApi = {
       type: CustomFieldType;
       options?: string[];
       formula?: string;
+      linked_database_id?: number;
       min_view_role?: PipelineRole | null;
       min_edit_role?: PipelineRole | null;
       required?: boolean;

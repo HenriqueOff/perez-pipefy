@@ -5,11 +5,13 @@ const roleSchema = z.enum(['viewer', 'editor', 'manager', 'owner']);
 export const createDatabaseSchema = z.object({
   name: z.string().min(1).max(150),
   description: z.string().max(2000).optional(),
+  category: z.string().max(100).optional(),
 });
 
 export const updateDatabaseSchema = z.object({
   name: z.string().min(1).max(150).optional(),
   description: z.string().max(2000).nullable().optional(),
+  category: z.string().max(100).nullable().optional(),
   archived: z.boolean().optional(),
 });
 

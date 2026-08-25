@@ -13,9 +13,9 @@ import {
 export const DatabasesApi = {
   list: () => api.get<Database[]>('/databases').then((r) => r.data),
   detail: (id: number) => api.get<DatabaseDetail>(`/databases/${id}`).then((r) => r.data),
-  create: (input: { name: string; description?: string }) =>
+  create: (input: { name: string; description?: string; category?: string }) =>
     api.post<Database>('/databases', input).then((r) => r.data),
-  update: (id: number, changes: { name?: string; description?: string | null; archived?: boolean }) =>
+  update: (id: number, changes: { name?: string; description?: string | null; category?: string | null; archived?: boolean }) =>
     api.patch<Database>(`/databases/${id}`, changes).then((r) => r.data),
 
   listMembers: (id: number) => api.get<DatabaseMember[]>(`/databases/${id}/members`).then((r) => r.data),

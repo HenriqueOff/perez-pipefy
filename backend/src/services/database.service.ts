@@ -32,10 +32,11 @@ export const DatabaseService = {
     return { ...database, fields, members };
   },
 
-  async create(input: { name: string; description?: string; created_by: number }) {
+  async create(input: { name: string; description?: string; category?: string; created_by: number }) {
     const database = await DatabaseModel.create({
       name: input.name,
       description: input.description ?? null,
+      category: input.category ?? null,
       created_by: input.created_by,
     });
     // criador vira owner automaticamente, mesma regra de pipelines
@@ -43,7 +44,10 @@ export const DatabaseService = {
     return database;
   },
 
-  async update(databaseId: number, changes: { name?: string; description?: string | null; archived?: boolean }) {
+  async update(
+    databaseId: number,
+    changes: { name?: string; description?: string | null; category?: string | null; archived?: boolean }
+  ) {
     const database = await DatabaseModel.findById(databaseId);
     if (!database) {
       throw AppError.notFound('Database não encontrado');

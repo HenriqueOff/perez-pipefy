@@ -90,6 +90,7 @@ export interface CustomFieldRow {
   min_edit_role: PipelineRole | null;
   required: boolean;
   position: number;
+  linked_database_id: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -276,6 +277,7 @@ export interface DatabaseRow {
   id: number;
   name: string;
   description: string | null;
+  category: string | null;
   created_by: number;
   archived: boolean;
   created_at: Date;
