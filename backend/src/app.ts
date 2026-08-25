@@ -21,6 +21,13 @@ export function createApp() {
 
   app.use('/api/v1', routes);
 
+  // Sem isso, rota inexistente cai no 404 padrão do Express — página HTML genérica em
+  // vez do formato JSON usado no resto da API (inconsistente e confirma o framework por
+  // trás pra quem estiver reconhecendo a aplicação).
+  app.use((_req, res) => {
+    res.status(404).json({ error: 'Rota não encontrada' });
+  });
+
   app.use(errorHandler);
 
   return app;
