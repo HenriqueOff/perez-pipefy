@@ -305,6 +305,7 @@ function EmailTemplatesSection({ pipelineId }: { pipelineId: number }) {
           <textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={4} />
         </label>
         <button type="submit" disabled={createMutation.isPending}>
+          {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
           Criar modelo
         </button>
       </form>
@@ -886,6 +887,7 @@ function AutomationForm({
       )}
 
       <button type="submit" disabled={createMutation.isPending}>
+        {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
         Criar automação
       </button>
     </form>

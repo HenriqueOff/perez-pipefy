@@ -96,6 +96,7 @@ export default function ChecklistSection({
         <form className="inline-form" onSubmit={handleAdd}>
           <input placeholder="Novo item da checklist" value={title} onChange={(e) => setTitle(e.target.value)} />
           <button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Adicionar
           </button>
         </form>

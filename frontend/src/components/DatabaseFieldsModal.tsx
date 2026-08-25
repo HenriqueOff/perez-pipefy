@@ -151,6 +151,7 @@ export default function DatabaseFieldsModal({ databaseId, fields, canManage, onC
                 Obrigatório
               </label>
               <button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                 Adicionar campo
               </button>
             </form>

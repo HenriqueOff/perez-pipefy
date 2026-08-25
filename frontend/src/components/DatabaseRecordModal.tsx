@@ -180,6 +180,7 @@ export default function DatabaseRecordModal({ databaseId, record, fields, canEdi
                 ))}
               </div>
               <button type="submit" disabled={!canEdit || createMutation.isPending}>
+                {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                 Criar registro
               </button>
             </form>

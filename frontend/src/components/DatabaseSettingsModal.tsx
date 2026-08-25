@@ -91,6 +91,7 @@ export default function DatabaseSettingsModal({ database, onClose }: Props) {
             </datalist>
             <div className="page-header-actions">
               <button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                 Salvar
               </button>
             </div>
@@ -105,7 +106,15 @@ export default function DatabaseSettingsModal({ database, onClose }: Props) {
                 ? 'Este database está arquivado — some das listagens, mas nenhum dado foi apagado.'
                 : 'Arquivar remove este database das listagens de todos os membros. Não apaga nada.'}
             </p>
-            <button type="button" className="danger-button" onClick={() => archiveMutation.mutate()}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => {
+                if (database.archived || confirm(`Arquivar o database "${database.name}"? Ele some das listagens de todos os membros até você reverter.`)) {
+                  archiveMutation.mutate();
+                }
+              }}
+            >
               {database.archived ? 'Reativar database' : 'Arquivar database'}
             </button>
           </div>

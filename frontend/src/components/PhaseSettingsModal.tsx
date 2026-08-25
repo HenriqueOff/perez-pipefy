@@ -211,6 +211,7 @@ export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, o
             </div>
             <div className="page-header-actions">
               <button type="submit" disabled={savePhaseMutation.isPending}>
+                {savePhaseMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                 Salvar fase
               </button>
               <button type="button" className="danger-button" onClick={handleDeletePhase}>
@@ -448,6 +449,7 @@ function AddFieldForm({
         Campo obrigatório para avançar de fase
       </label>
       <button type="submit" className="field-builder-submit" disabled={createMutation.isPending}>
+        {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
         Adicionar campo
       </button>
     </form>
@@ -530,6 +532,7 @@ function EditFieldForm({
         </label>
         <div className="page-header-actions">
           <button type="submit" disabled={updateMutation.isPending}>
+            {updateMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Salvar
           </button>
           <button type="button" className="secondary-button" onClick={onCancel}>

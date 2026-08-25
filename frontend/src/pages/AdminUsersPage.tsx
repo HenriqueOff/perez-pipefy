@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UsersApi } from '../api/users';
 import { GlobalRole } from '../types';
+import PasswordInput from '../components/PasswordInput';
 
 const ROLE_LABELS: Record<GlobalRole, string> = {
   admin: 'Administrador',
@@ -82,7 +83,7 @@ export default function AdminUsersPage() {
             </label>
             <label className="field-input">
               Senha provisória
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} />
             </label>
             <label className="field-input">
               Papel
@@ -96,6 +97,7 @@ export default function AdminUsersPage() {
             </label>
           </div>
           <button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Criar usuário
           </button>
         </form>

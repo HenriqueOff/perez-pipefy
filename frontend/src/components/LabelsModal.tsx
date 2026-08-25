@@ -144,6 +144,7 @@ export default function LabelsModal({ pipelineId, canManage, onClose }: Props) {
               />
               <input placeholder="Nome da etiqueta" value={name} onChange={(e) => setName(e.target.value)} />
               <button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                 Criar
               </button>
             </form>

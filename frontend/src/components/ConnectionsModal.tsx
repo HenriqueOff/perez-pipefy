@@ -139,6 +139,7 @@ export default function ConnectionsModal({ pipelineId, canManage, onClose }: Pro
                     </select>
                   </label>
                   <button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                     Criar conexão
                   </button>
                 </form>

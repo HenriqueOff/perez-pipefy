@@ -91,6 +91,7 @@ export default function ProfilePage() {
         <form className="inline-form" onSubmit={handleProfileSubmit}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
           <button type="submit" disabled={profileMutation.isPending || !name.trim()}>
+            {profileMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Salvar
           </button>
         </form>
@@ -124,6 +125,7 @@ export default function ProfilePage() {
             />
           </label>
           <button type="submit" disabled={passwordMutation.isPending}>
+            {passwordMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Alterar senha
           </button>
         </form>

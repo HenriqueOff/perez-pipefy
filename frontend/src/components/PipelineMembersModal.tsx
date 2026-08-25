@@ -108,7 +108,13 @@ export default function PipelineMembersModal({ pipelineId, members, canManage, o
                   <span className="role-badge">{ROLE_LABELS[m.pipeline_role]}</span>
                 )}
                 {canManage && (
-                  <button className="icon-button" onClick={() => removeMutation.mutate(m.user_id)} title="Remover">
+                  <button
+                    className="icon-button"
+                    onClick={() => {
+                      if (confirm(`Remover ${m.name} deste pipeline?`)) removeMutation.mutate(m.user_id);
+                    }}
+                    title="Remover"
+                  >
                     <Icon name="x" size={14} />
                   </button>
                 )}
@@ -136,6 +142,7 @@ export default function PipelineMembersModal({ pipelineId, members, canManage, o
                   ))}
                 </select>
                 <button onClick={handleAdd} disabled={!selectedUserId || addMutation.isPending}>
+                  {addMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                   Adicionar
                 </button>
               </div>

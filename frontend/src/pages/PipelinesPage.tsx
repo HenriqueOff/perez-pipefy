@@ -165,6 +165,7 @@ function PipelinesTab() {
             autoFocus
           />
           <button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Criar
           </button>
           <button type="button" className="secondary-button" onClick={() => setCreating(false)}>
@@ -340,6 +341,7 @@ function DatabasesTab() {
             ))}
           </datalist>
           <button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Criar
           </button>
           <button type="button" className="secondary-button" onClick={() => setCreating(false)}>

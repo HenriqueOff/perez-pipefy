@@ -151,6 +151,7 @@ export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClo
                 </label>
                 <div className="page-header-actions">
                   <button type="submit" disabled={saveMutation.isPending}>
+                    {saveMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
                     Salvar
                   </button>
                 </div>
@@ -165,7 +166,15 @@ export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClo
                     ? 'Este pipeline está arquivado — some das listagens de todo mundo, mas nenhum dado foi apagado. Pode reativar quando quiser.'
                     : 'Arquivar remove este pipeline das listagens de todos os usuários (inclusive owners/managers). Não apaga nada, e pode ser revertido aqui mesmo.'}
                 </p>
-                <button type="button" className="danger-button" onClick={() => archiveMutation.mutate()}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={() => {
+                    if (pipeline.archived || confirm(`Arquivar o pipeline "${pipeline.name}"? Ele some das listagens de todos os usuários até você reverter.`)) {
+                      archiveMutation.mutate();
+                    }
+                  }}
+                >
                   {pipeline.archived ? 'Reativar pipeline' : 'Arquivar pipeline'}
                 </button>
               </div>

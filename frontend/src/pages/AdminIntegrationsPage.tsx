@@ -92,6 +92,7 @@ export default function AdminIntegrationsPage() {
               />
             </label>
             <button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
               Salvar integração
             </button>
           </form>

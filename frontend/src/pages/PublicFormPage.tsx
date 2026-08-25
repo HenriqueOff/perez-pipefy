@@ -138,6 +138,7 @@ export default function PublicFormPage() {
         ))}
 
         <button type="submit" disabled={submitMutation.isPending}>
+          {submitMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
           {submitMutation.isPending ? 'Enviando...' : 'Enviar'}
         </button>
       </form>

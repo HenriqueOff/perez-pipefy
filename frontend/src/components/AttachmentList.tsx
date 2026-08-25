@@ -126,6 +126,7 @@ export default function AttachmentList({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending}
           >
+            {uploadMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             {uploadMutation.isPending ? 'Enviando...' : '+ Adicionar anexo'}
           </button>
         </>
