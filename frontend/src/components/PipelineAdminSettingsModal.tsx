@@ -113,7 +113,7 @@ export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClo
         </div>
 
         <div className="modal-body">
-          <div className="view-toggle" style={{ marginBottom: 16 }}>
+          <div className="view-toggle">
             <button
               type="button"
               className={`view-toggle-tab ${tab === 'settings' ? 'view-toggle-tab-active' : ''}`}

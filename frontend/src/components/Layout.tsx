@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { PipelinesApi } from '../api/pipelines';
+import { DatabasesApi } from '../api/databases';
 import Avatar from './Avatar';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
@@ -9,6 +10,7 @@ import NotificationBell from './NotificationBell';
 export default function Layout() {
   const { user, logout } = useAuth();
   const { data: pipelines } = useQuery({ queryKey: ['pipelines'], queryFn: PipelinesApi.list });
+  const { data: databases } = useQuery({ queryKey: ['databases'], queryFn: DatabasesApi.list });
 
   return (
     <div className="app-shell">
@@ -31,6 +33,23 @@ export default function Layout() {
               </NavLink>
             ))}
             {pipelines?.length === 0 && <span className="sidebar-empty">Nenhum pipeline ainda</span>}
+          </nav>
+        </div>
+
+        <div className="sidebar-section">
+          <span className="sidebar-section-label">Databases</span>
+          <nav className="sidebar-nav">
+            {databases?.map((d) => (
+              <NavLink
+                key={d.id}
+                to={`/databases/${d.id}`}
+                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              >
+                <span className="sidebar-link-dot" aria-hidden />
+                {d.name}
+              </NavLink>
+            ))}
+            {databases?.length === 0 && <span className="sidebar-empty">Nenhum database ainda</span>}
           </nav>
         </div>
 

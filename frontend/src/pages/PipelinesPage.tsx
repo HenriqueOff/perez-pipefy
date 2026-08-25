@@ -90,7 +90,7 @@ export default function PipelinesPage() {
         </div>
       </div>
 
-      <div className="view-toggle view-toggle-split" style={{ marginBottom: 20 }}>
+      <div className="view-toggle view-toggle-split">
         <div className="view-toggle-group">
           <button
             type="button"
@@ -358,11 +358,12 @@ function DatabasesTab() {
         </p>
       )}
 
-      {!creating && (
-        <button type="button" className="secondary-button" style={{ marginBottom: 20 }} onClick={() => setCreating(true)}>
-          + Criar database
+      <div className="database-grid" style={{ marginBottom: 20 }}>
+        <button type="button" className="database-tile database-tile-create" onClick={() => setCreating((v) => !v)}>
+          <span className="pipeline-card-create-icon">+</span>
+          Criar database
         </button>
-      )}
+      </div>
 
       {groups.map(([groupName, groupDatabases]) => (
         <section key={groupName} className="database-section">

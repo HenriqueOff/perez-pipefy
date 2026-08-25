@@ -146,29 +146,6 @@ export default function PipelineBoardPage() {
       <div className="page-header">
         <h1>{pipeline.name}</h1>
         <div className="page-header-actions">
-          <div className="view-toggle">
-            <button
-              type="button"
-              className={`view-toggle-tab ${viewMode === 'kanban' ? 'view-toggle-tab-active' : ''}`}
-              onClick={() => setViewMode('kanban')}
-            >
-              Quadro
-            </button>
-            <button
-              type="button"
-              className={`view-toggle-tab ${viewMode === 'table' ? 'view-toggle-tab-active' : ''}`}
-              onClick={() => setViewMode('table')}
-            >
-              Tabela
-            </button>
-            <button
-              type="button"
-              className={`view-toggle-tab ${viewMode === 'dashboard' ? 'view-toggle-tab-active' : ''}`}
-              onClick={() => setViewMode('dashboard')}
-            >
-              Dashboard
-            </button>
-          </div>
           <button className="secondary-button" onClick={() => setShowMembers(true)}>
             Membros ({pipeline.members.length})
           </button>
@@ -205,6 +182,30 @@ export default function PipelineBoardPage() {
             <button onClick={() => setAddingPhase((v) => !v)}>{addingPhase ? 'Cancelar' : 'Nova fase'}</button>
           )}
         </div>
+      </div>
+
+      <div className="view-toggle">
+        <button
+          type="button"
+          className={`view-toggle-tab ${viewMode === 'kanban' ? 'view-toggle-tab-active' : ''}`}
+          onClick={() => setViewMode('kanban')}
+        >
+          Quadro
+        </button>
+        <button
+          type="button"
+          className={`view-toggle-tab ${viewMode === 'table' ? 'view-toggle-tab-active' : ''}`}
+          onClick={() => setViewMode('table')}
+        >
+          Tabela
+        </button>
+        <button
+          type="button"
+          className={`view-toggle-tab ${viewMode === 'dashboard' ? 'view-toggle-tab-active' : ''}`}
+          onClick={() => setViewMode('dashboard')}
+        >
+          Dashboard
+        </button>
       </div>
 
       {addingPhase && (

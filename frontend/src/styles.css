@@ -854,6 +854,22 @@ textarea:focus {
   font-size: 13px;
 }
 
+.database-tile-create {
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.database-tile-create:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
 .database-tile-name {
   font-weight: 500;
   font-size: 13px;
@@ -1565,6 +1581,17 @@ hr.div {
   margin-bottom: 0;
 }
 
+.field-builder-submit {
+  align-self: flex-start;
+}
+
+/* Texto de apoio colado logo abaixo de um cabeçalho de seção (h3), cancelando parte
+   da margem superior padrão do h3 pra ficar visualmente junto ao título. */
+.section-hint {
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+
 /* ---------- Attachments ---------- */
 
 .attachment-section {
@@ -2012,6 +2039,7 @@ button svg {
   display: flex;
   gap: 20px;
   border-bottom: 1px solid var(--color-border);
+  margin-bottom: 20px;
 }
 
 .view-toggle-split {

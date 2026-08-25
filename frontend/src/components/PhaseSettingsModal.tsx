@@ -250,7 +250,7 @@ export default function PhaseSettingsModal({ pipelineId, phase, isGlobalAdmin, o
             )}
           </div>
           {!isGlobalAdmin && (
-            <p className="muted" style={{ marginTop: -8, marginBottom: 12 }}>
+            <p className="muted section-hint">
               Só admins geral podem criar, editar ou excluir campos customizados.
             </p>
           )}
@@ -447,7 +447,7 @@ function AddFieldForm({
         <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />
         Campo obrigatório para avançar de fase
       </label>
-      <button type="submit" disabled={createMutation.isPending}>
+      <button type="submit" className="field-builder-submit" disabled={createMutation.isPending}>
         Adicionar campo
       </button>
     </form>

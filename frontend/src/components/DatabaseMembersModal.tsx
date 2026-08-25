@@ -120,7 +120,7 @@ export default function DatabaseMembersModal({ databaseId, members, canManage, o
           {canManage && (
             <div className="add-member-form">
               <h3>Adicionar membro</h3>
-              <p className="muted" style={{ fontSize: 12, marginTop: -8 }}>
+              <p className="muted section-hint" style={{ fontSize: 12 }}>
                 Só quem já é gerente/dono deste database (ou admin geral) pode adicionar alguém — ninguém entra
                 sozinho.
               </p>
