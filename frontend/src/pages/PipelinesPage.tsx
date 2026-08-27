@@ -134,14 +134,22 @@ function PipelinesTab() {
     refetch,
   } = useQuery({ queryKey: ['pipelines-overview'], queryFn: PipelinesApi.overview });
   const [name, setName] = useState('');
+  const [template, setTemplate] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const { data: templates } = useQuery({
+    queryKey: ['pipeline-templates'],
+    queryFn: PipelinesApi.listTemplates,
+    enabled: creating,
+  });
+
   const createMutation = useMutation({
-    mutationFn: (input: { name: string }) => PipelinesApi.create(input),
+    mutationFn: (input: { name: string; template?: string }) => PipelinesApi.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pipelines-overview'] });
       queryClient.invalidateQueries({ queryKey: ['pipelines'] });
       setName('');
+      setTemplate('');
       setCreating(false);
     },
   });
@@ -149,7 +157,7 @@ function PipelinesTab() {
   function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    createMutation.mutate({ name: name.trim() });
+    createMutation.mutate({ name: name.trim(), template: template || undefined });
   }
 
   const pipelines: PipelineOverviewItem[] = overview?.pipelines ?? [];
@@ -164,6 +172,14 @@ function PipelinesTab() {
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
+          <select value={template} onChange={(e) => setTemplate(e.target.value)}>
+            <option value="">Em branco</option>
+            {templates?.map((t) => (
+              <option key={t.key} value={t.key}>
+                Modelo: {t.label}
+              </option>
+            ))}
+          </select>
           <button type="submit" disabled={createMutation.isPending}>
             {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
             Criar

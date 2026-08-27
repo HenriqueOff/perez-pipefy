@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PipelineModel } from '../models/pipeline.model';
 import { PipelineService } from '../services/pipeline.service';
 import { DashboardService } from '../services/dashboard.service';
+import { listPipelineTemplates } from '../utils/pipelineTemplates';
 
 export const PipelineController = {
   async list(req: Request, res: Response) {
@@ -18,6 +19,10 @@ export const PipelineController = {
     const limit = Math.min(Number(req.query.limit) || 50, 200);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
     res.json(await PipelineService.getSystemActivity(limit, offset));
+  },
+
+  async listTemplates(_req: Request, res: Response) {
+    res.json(listPipelineTemplates());
   },
 
   async detail(req: Request, res: Response) {

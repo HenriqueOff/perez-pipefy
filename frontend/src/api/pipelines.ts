@@ -34,8 +34,9 @@ export const PipelinesApi = {
   overview: () => api.get<PipelinesOverview>('/pipelines/overview').then((r) => r.data),
   systemActivity: (params?: { limit?: number; offset?: number }) =>
     api.get<RecentActivityItem[]>('/pipelines/system-activity', { params }).then((r) => r.data),
+  listTemplates: () => api.get<{ key: string; label: string }[]>('/pipelines/templates').then((r) => r.data),
   detail: (id: number) => api.get<PipelineDetail>(`/pipelines/${id}`).then((r) => r.data),
-  create: (input: { name: string; description?: string }) =>
+  create: (input: { name: string; description?: string; template?: string }) =>
     api.post<Pipeline>('/pipelines', input).then((r) => r.data),
   update: (id: number, changes: { name?: string; description?: string | null; archived?: boolean }) =>
     api.patch<Pipeline>(`/pipelines/${id}`, changes).then((r) => r.data),

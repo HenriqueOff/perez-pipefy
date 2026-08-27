@@ -24,6 +24,7 @@ router.get('/overview', asyncHandler(PipelineController.overview));
 // Admin-only: aba "Atividade recente" na home, mostra o log do sistema inteiro, sem
 // filtrar pelas pipelines em que o admin está inserido.
 router.get('/system-activity', requireGlobalRole('admin'), asyncHandler(PipelineController.systemActivity));
+router.get('/templates', asyncHandler(PipelineController.listTemplates));
 router.post('/', validateBody(createPipelineSchema), asyncHandler(PipelineController.create));
 router.get('/:pipelineId', requirePipelineRole('viewer'), asyncHandler(PipelineController.detail));
 router.patch(

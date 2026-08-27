@@ -9,6 +9,7 @@ import { UserModel } from '../models/user.model';
 import { PipelineRole } from '../types/enums';
 import { AppError } from '../utils/AppError';
 import { resolveActorRole, roleAtLeast } from '../utils/pipelineRole';
+import { PIPELINE_TEMPLATES } from '../utils/pipelineTemplates';
 import { FormulaFieldService } from './formulaField.service';
 
 const RECENT_ACTIVITY_LIMIT = 15;
@@ -143,7 +144,7 @@ export const PipelineService = {
     };
   },
 
-  async create(input: { name: string; description?: string; created_by: number }) {
+  async create(input: { name: string; description?: string; created_by: number; template?: string }) {
     const pipeline = await PipelineModel.create({
       name: input.name,
       description: input.description ?? null,
@@ -151,6 +152,25 @@ export const PipelineService = {
     });
     // criador vira owner automaticamente
     await PipelineModel.addMember(pipeline.id, input.created_by, 'owner');
+
+    const template = input.template ? PIPELINE_TEMPLATES[input.template] : undefined;
+    if (template) {
+      for (const [position, phase] of template.phases.entries()) {
+        await PhaseModel.create({
+          pipeline_id: pipeline.id,
+          name: phase.name,
+          position,
+          color: phase.color ?? null,
+          is_initial: position === 0,
+          is_final: position === template.phases.length - 1,
+          sla_hours: null,
+          wip_limit: null,
+          min_move_in_role: null,
+          min_move_out_role: null,
+        });
+      }
+    }
+
     return pipeline;
   },
 

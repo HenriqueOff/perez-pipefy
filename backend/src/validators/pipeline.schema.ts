@@ -1,10 +1,13 @@
 import { z } from 'zod';
+import { PIPELINE_TEMPLATES } from '../utils/pipelineTemplates';
 
 const roleSchema = z.enum(['viewer', 'editor', 'manager', 'owner']);
+const templateKeys = Object.keys(PIPELINE_TEMPLATES) as [string, ...string[]];
 
 export const createPipelineSchema = z.object({
   name: z.string().min(1).max(150),
   description: z.string().max(2000).optional(),
+  template: z.enum(templateKeys).optional(),
 });
 
 export const updatePipelineSchema = z.object({
