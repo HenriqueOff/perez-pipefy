@@ -10,6 +10,7 @@ import CardAssignees from './CardAssignees';
 import ChecklistSection from './ChecklistSection';
 import ConnectedCardsSection from './ConnectedCardsSection';
 import Icon from './Icon';
+import PhotoGalleryField from './PhotoGalleryField';
 
 interface Props {
   pipelineId: number;
@@ -151,6 +152,8 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
             {currentPhase?.customFields.map((field) => (
               <FieldInput
                 key={field.id}
+                pipelineId={pipelineId}
+                cardId={cardId}
                 field={field}
                 value={valuesByFieldId.get(field.id)}
                 linkedRecordTitle={linkedTitleByFieldId.get(field.id)}
@@ -250,12 +253,16 @@ function eventIcon(eventType: string): string {
 }
 
 function FieldInput({
+  pipelineId,
+  cardId,
   field,
   value,
   linkedRecordTitle,
   onCommit,
   disabled,
 }: {
+  pipelineId: number;
+  cardId: number;
   field: CustomField;
   value: unknown;
   linkedRecordTitle?: string | null;
@@ -350,6 +357,15 @@ function FieldInput({
             </option>
           ))}
         </select>
+      )}
+      {field.type === 'photo_gallery' && (
+        <PhotoGalleryField
+          pipelineId={pipelineId}
+          cardId={cardId}
+          value={Array.isArray(value) ? (value as number[]) : []}
+          disabled={!!disabled}
+          onCommit={onCommit}
+        />
       )}
     </label>
   );

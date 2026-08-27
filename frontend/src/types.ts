@@ -1,6 +1,15 @@
 export type GlobalRole = 'admin' | 'member';
 export type PipelineRole = 'owner' | 'manager' | 'editor' | 'viewer';
-export type CustomFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'formula' | 'database_link';
+export type CustomFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'boolean'
+  | 'select'
+  | 'formula'
+  | 'database_link'
+  | 'photo_gallery';
 export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
 
 export interface User {

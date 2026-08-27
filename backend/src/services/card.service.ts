@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
 import { db } from '../config/db';
+import { AttachmentModel } from '../models/attachment.model';
 import { CardModel } from '../models/card.model';
 import { CardFieldValueModel } from '../models/cardFieldValue.model';
 import { CardHistoryModel } from '../models/cardHistory.model';
@@ -93,6 +94,31 @@ async function validateDatabaseLinkValue(field: CustomFieldRow, value: unknown, 
   }
 }
 
+// 'photo_gallery' guarda um array de ids de attachments (o mesmo mecanismo de anexo já
+// usado pelo card) — o que precisa validar é que cada id realmente pertence a ESTE card,
+// senão um usuário poderia referenciar (e assim expor) o anexo de um card de outro pipeline.
+async function validatePhotoGalleryValue(field: CustomFieldRow, value: unknown, cardId: number): Promise<void> {
+  if (value === null || value === undefined) {
+    if (field.required) {
+      throw new AppError(`O campo "${field.label}" é obrigatório`, 422);
+    }
+    return;
+  }
+  if (!Array.isArray(value) || value.some((v) => !Number.isInteger(v))) {
+    throw new AppError(`O campo "${field.label}" deve ser uma lista de anexos`, 422);
+  }
+  if (field.required && value.length === 0) {
+    throw new AppError(`O campo "${field.label}" é obrigatório`, 422);
+  }
+  if (value.length === 0) return;
+
+  const attachments = await AttachmentModel.listByCard(cardId);
+  const validIds = new Set(attachments.map((a) => a.id));
+  if (!value.every((id) => validIds.has(id))) {
+    throw new AppError(`O campo "${field.label}" referencia um anexo que não pertence a este card`, 422);
+  }
+}
+
 // "Puxar dado do Database pra dentro do pipe": ao escolher um registro num campo
 // database_link, qualquer OUTRO campo customizado da mesma fase cuja key bata com a key de
 // um campo do database vinculado é preenchido automaticamente com o valor daquele registro.
@@ -159,6 +185,8 @@ async function applyFieldValues(
 
     if (field.type === 'database_link') {
       await validateDatabaseLinkValue(field, value, userId);
+    } else if (field.type === 'photo_gallery') {
+      await validatePhotoGalleryValue(field, value, cardId);
     } else {
       validateFieldValue(field, value);
     }
