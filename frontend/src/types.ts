@@ -134,6 +134,21 @@ export interface PipelinesOverview {
   recentActivity: RecentActivityItem[];
 }
 
+// GET /pipelines/overview-dashboard — visão executiva cruzando todas as pipelines do usuário
+export interface OverviewDashboardData {
+  totalCards: number;
+  totalOverdue: number;
+  totalSlaBreached: number;
+  byPipeline: {
+    pipeline_id: number;
+    pipeline_name: string;
+    cardCount: number;
+    overdueCount: number;
+    slaBreachedCount: number;
+  }[];
+  cardsByAssignee: { user_id: number | null; name: string; count: number }[];
+}
+
 export interface CustomField {
   id: number;
   phase_id: number;

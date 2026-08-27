@@ -13,6 +13,7 @@ import {
   Comment,
   DashboardData,
   EmailTemplate,
+  OverviewDashboardData,
   PipelineAdminInfo,
   PipelineConnection,
   PublicFormInfo,
@@ -35,6 +36,7 @@ export const PipelinesApi = {
   systemActivity: (params?: { limit?: number; offset?: number }) =>
     api.get<RecentActivityItem[]>('/pipelines/system-activity', { params }).then((r) => r.data),
   listTemplates: () => api.get<{ key: string; label: string }[]>('/pipelines/templates').then((r) => r.data),
+  overviewDashboard: () => api.get<OverviewDashboardData>('/pipelines/overview-dashboard').then((r) => r.data),
   detail: (id: number) => api.get<PipelineDetail>(`/pipelines/${id}`).then((r) => r.data),
   create: (input: { name: string; description?: string; template?: string }) =>
     api.post<Pipeline>('/pipelines', input).then((r) => r.data),

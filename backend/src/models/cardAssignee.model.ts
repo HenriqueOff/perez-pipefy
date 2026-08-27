@@ -19,6 +19,19 @@ export const CardAssigneeModel = {
     >;
   },
 
+  // Mesma coisa que listByPipelineCards, mas cruzando várias pipelines de uma vez —
+  // usado no dashboard agregado (produtividade por responsável no sistema inteiro).
+  listByPipelinesCards(pipelineIds: number[]) {
+    if (pipelineIds.length === 0) return Promise.resolve([]);
+    return db('card_assignees')
+      .join('users', 'users.id', 'card_assignees.user_id')
+      .join('cards', 'cards.id', 'card_assignees.card_id')
+      .whereIn('cards.pipeline_id', pipelineIds)
+      .select('card_assignees.card_id', 'users.id as user_id', 'users.name') as Promise<
+      { card_id: number; user_id: number; name: string }[]
+    >;
+  },
+
   attach(cardId: number, userId: number, extra?: { due_date?: string | null; note?: string | null }) {
     const payload = { card_id: cardId, user_id: userId, due_date: extra?.due_date ?? null, note: extra?.note ?? null };
     if (extra?.due_date !== undefined || extra?.note !== undefined) {

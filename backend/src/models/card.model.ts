@@ -12,6 +12,13 @@ export const CardModel = {
     return db<CardRow>(TABLE).where({ pipeline_id: pipelineId }).orderBy(['current_phase_id', 'position']);
   },
 
+  // Só os ids — usado pelo dashboard agregado pra montar a contagem de responsáveis
+  // cruzando várias pipelines sem carregar a linha inteira de cada card.
+  listIdsByPipelines(pipelineIds: number[]) {
+    if (pipelineIds.length === 0) return Promise.resolve([]);
+    return db<CardRow>(TABLE).whereIn('pipeline_id', pipelineIds).pluck('id') as Promise<number[]>;
+  },
+
   countInPhase(phaseId: number) {
     return db<CardRow>(TABLE).where({ current_phase_id: phaseId }).count<{ count: string }[]>('id as count').first();
   },

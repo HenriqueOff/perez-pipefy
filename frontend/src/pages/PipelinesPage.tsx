@@ -6,6 +6,7 @@ import { DatabasesApi } from '../api/databases';
 import { useAuth } from '../context/AuthContext';
 import { Database, PipelineOverviewItem, RecentActivityItem } from '../types';
 import Tooltip from '../components/Tooltip';
+import OverviewDashboardTab from '../components/OverviewDashboardTab';
 
 /** Paleta fixa inspirada nas cores dos tiles de pipe do Pipefy (fundo pastel + ícone saturado
  * da mesma família), escolhida por hash do nome pra manter a cor estável entre carregamentos. */
@@ -68,11 +69,12 @@ function describeActivity(a: RecentActivityItem): string {
   }
 }
 
-type ContentTab = 'pipelines' | 'databases' | 'activity';
+type ContentTab = 'pipelines' | 'databases' | 'dashboard' | 'activity';
 
 const TAB_DESCRIPTIONS: Record<ContentTab, string> = {
   pipelines: 'Seus pipelines e o que aconteceu recentemente.',
   databases: 'Seus databases.',
+  dashboard: 'Visão geral cruzando todos os seus pipelines.',
   activity: 'Log de atividade de todo o sistema.',
 };
 
@@ -106,6 +108,13 @@ export default function PipelinesPage() {
           >
             Databases
           </button>
+          <button
+            type="button"
+            className={`view-toggle-tab ${tab === 'dashboard' ? 'view-toggle-tab-active' : ''}`}
+            onClick={() => setTab('dashboard')}
+          >
+            Dashboard
+          </button>
         </div>
         {isGlobalAdmin && (
           <button
@@ -120,6 +129,7 @@ export default function PipelinesPage() {
 
       {tab === 'pipelines' && <PipelinesTab />}
       {tab === 'databases' && <DatabasesTab />}
+      {tab === 'dashboard' && <OverviewDashboardTab />}
       {tab === 'activity' && isGlobalAdmin && <SystemActivityTab />}
     </div>
   );

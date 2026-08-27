@@ -15,6 +15,11 @@ export const PipelineController = {
     res.json(overview);
   },
 
+  async overviewDashboard(req: Request, res: Response) {
+    const pipelines = await PipelineService.listForUser(req.user!.id);
+    res.json(await DashboardService.getForAllPipelines(pipelines));
+  },
+
   async systemActivity(req: Request, res: Response) {
     const limit = Math.min(Number(req.query.limit) || 50, 200);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
