@@ -21,6 +21,7 @@ export function validateFieldValue(field: FieldLike, value: unknown): void {
   switch (field.type) {
     case 'text':
     case 'textarea':
+    case 'phone':
       if (typeof value !== 'string') {
         throw new AppError(`O campo "${field.label}" deve ser texto`, 422);
       }

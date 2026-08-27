@@ -11,7 +11,8 @@ export type CustomFieldType =
   | 'select'
   | 'formula'
   | 'database_link'
-  | 'photo_gallery';
+  | 'photo_gallery'
+  | 'phone';
 
 export type CardHistoryEventType =
   | 'created'

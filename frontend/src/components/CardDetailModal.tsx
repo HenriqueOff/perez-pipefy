@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import { openHtmlDocument } from '../utils/openHtmlDocument';
+import { buildWhatsAppLink } from '../utils/whatsapp';
 import { DatabasesApi } from '../api/databases';
 import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
 import { roleAtLeast } from '../utils/roles';
@@ -164,6 +165,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
                 key={field.id}
                 pipelineId={pipelineId}
                 cardId={cardId}
+                cardTitle={card.title}
                 field={field}
                 value={valuesByFieldId.get(field.id)}
                 linkedRecordTitle={linkedTitleByFieldId.get(field.id)}
@@ -287,6 +289,7 @@ function eventIcon(eventType: string): string {
 function FieldInput({
   pipelineId,
   cardId,
+  cardTitle,
   field,
   value,
   linkedRecordTitle,
@@ -295,6 +298,7 @@ function FieldInput({
 }: {
   pipelineId: number;
   cardId: number;
+  cardTitle: string;
   field: CustomField;
   value: unknown;
   linkedRecordTitle?: string | null;
@@ -389,6 +393,28 @@ function FieldInput({
             </option>
           ))}
         </select>
+      )}
+      {field.type === 'phone' && (
+        <div className="phone-field-row">
+          <input
+            value={String(local ?? '')}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onCommit(local)}
+            disabled={disabled}
+            placeholder="(11) 91234-5678"
+          />
+          {String(local ?? '').trim() !== '' && (
+            <a
+              className="secondary-button"
+              href={buildWhatsAppLink(String(local), `Olá! Sobre o card "${cardTitle}"...`)}
+              target="_blank"
+              rel="noreferrer"
+              title="Abrir no WhatsApp"
+            >
+              WhatsApp
+            </a>
+          )}
+        </div>
       )}
       {field.type === 'photo_gallery' && (
         <PhotoGalleryField

@@ -56,7 +56,18 @@ export const createCustomFieldSchema = z.object({
     .min(1)
     .max(100)
     .regex(/^[a-z0-9_]+$/, 'key deve conter apenas letras minúsculas, números e underscore'),
-  type: z.enum(['text', 'textarea', 'number', 'date', 'boolean', 'select', 'formula', 'database_link', 'photo_gallery']),
+  type: z.enum([
+    'text',
+    'textarea',
+    'number',
+    'date',
+    'boolean',
+    'select',
+    'formula',
+    'database_link',
+    'photo_gallery',
+    'phone',
+  ]),
   options: z.array(z.string()).optional(),
   formula: z.string().min(1).max(500).optional(),
   linked_database_id: z.number().int().positive().optional(),

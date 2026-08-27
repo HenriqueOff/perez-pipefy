@@ -1268,6 +1268,23 @@ textarea:focus {
   font-size: 13px;
 }
 
+.phone-field-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.phone-field-row input {
+  flex: 1;
+}
+
+.phone-field-row .secondary-button {
+  white-space: nowrap;
+  text-decoration: none;
+  color: #25d366;
+  border-color: #25d366;
+}
+
 .required {
   color: var(--color-danger);
   margin-left: 4px;

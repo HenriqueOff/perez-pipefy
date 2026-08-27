@@ -47,6 +47,7 @@ const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   formula: 'Fórmula',
   database_link: 'Conexão com database',
   photo_gallery: 'Galeria de fotos',
+  phone: 'Telefone (WhatsApp)',
 };
 
 const FORMULA_HELP = 'Use as keys dos campos do pipeline como variáveis. Operadores: + - * / %. Funções: ROUND(x, casas), MIN(a, b), MAX(a, b), ABS(x).';

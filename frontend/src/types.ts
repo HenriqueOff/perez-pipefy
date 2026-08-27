@@ -9,7 +9,8 @@ export type CustomFieldType =
   | 'select'
   | 'formula'
   | 'database_link'
-  | 'photo_gallery';
+  | 'photo_gallery'
+  | 'phone';
 export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
 
 export interface User {
