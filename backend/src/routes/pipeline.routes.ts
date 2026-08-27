@@ -11,6 +11,7 @@ import cardRoutes from './card.routes';
 import labelRoutes from './label.routes';
 import automationRoutes from './automation.routes';
 import emailTemplateRoutes from './emailTemplate.routes';
+import contractTemplateRoutes from './contractTemplate.routes';
 import pipelineConnectionRoutes from './pipelineConnection.routes';
 import publicFormManageRoutes from './publicFormManage.routes';
 
@@ -56,6 +57,7 @@ router.use('/:pipelineId/cards', cardRoutes);
 router.use('/:pipelineId/labels', labelRoutes);
 router.use('/:pipelineId/automations', automationRoutes);
 router.use('/:pipelineId/email-templates', emailTemplateRoutes);
+router.use('/:pipelineId/contract-templates', contractTemplateRoutes);
 router.use('/:pipelineId/connections', pipelineConnectionRoutes);
 router.use('/:pipelineId/public-form', publicFormManageRoutes);
 

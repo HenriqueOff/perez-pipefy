@@ -225,6 +225,15 @@ export interface EmailTemplateRow {
   updated_at: Date;
 }
 
+export interface ContractTemplateRow {
+  id: number;
+  pipeline_id: number;
+  name: string;
+  body_html: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface PipelineConnectionRow {
   id: number;
   owner_pipeline_id: number;

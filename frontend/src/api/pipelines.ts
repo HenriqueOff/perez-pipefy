@@ -11,6 +11,7 @@ import {
   CardDetail,
   ChecklistItem,
   Comment,
+  ContractTemplate,
   DashboardData,
   EmailTemplate,
   OverviewDashboardData,
@@ -176,6 +177,20 @@ export const PipelinesApi = {
 
   deleteEmailTemplate: (pipelineId: number, templateId: number) =>
     api.delete(`/pipelines/${pipelineId}/email-templates/${templateId}`).then((r) => r.data),
+
+  listContractTemplates: (pipelineId: number) =>
+    api.get<ContractTemplate[]>(`/pipelines/${pipelineId}/contract-templates`).then((r) => r.data),
+
+  createContractTemplate: (pipelineId: number, input: { name: string; body_html: string }) =>
+    api.post<ContractTemplate>(`/pipelines/${pipelineId}/contract-templates`, input).then((r) => r.data),
+
+  deleteContractTemplate: (pipelineId: number, templateId: number) =>
+    api.delete(`/pipelines/${pipelineId}/contract-templates/${templateId}`).then((r) => r.data),
+
+  generateContract: (pipelineId: number, cardId: number, templateId: number) =>
+    api
+      .get<string>(`/pipelines/${pipelineId}/cards/${cardId}/contracts/${templateId}`, { responseType: 'text' })
+      .then((r) => r.data),
 
   listPipelineConnections: (pipelineId: number) =>
     api

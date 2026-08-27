@@ -364,6 +364,13 @@ export interface EmailTemplate {
   body_html: string;
 }
 
+export interface ContractTemplate {
+  id: number;
+  pipeline_id: number;
+  name: string;
+  body_html: string;
+}
+
 export interface Automation {
   id: number;
   pipeline_id: number;

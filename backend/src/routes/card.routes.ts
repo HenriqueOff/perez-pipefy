@@ -64,6 +64,12 @@ router.post(
 );
 router.delete('/:cardId/labels/:labelId', requirePipelineRole('editor'), asyncHandler(LabelController.detach));
 
+router.get(
+  '/:cardId/contracts/:templateId',
+  requirePipelineRole('viewer'),
+  asyncHandler(CardController.generateContract)
+);
+
 router.use('/:cardId/comments', commentRoutes);
 router.use('/:cardId/attachments', attachmentRoutes);
 router.use('/:cardId/checklist', checklistRoutes);

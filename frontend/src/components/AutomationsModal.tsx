@@ -58,6 +58,7 @@ export default function AutomationsModal({ pipelineId, pipeline, canManage, onCl
 
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showContractTemplates, setShowContractTemplates] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const allFields = pipeline.phases.flatMap((p) => p.customFields.map((f) => ({ ...f, phaseName: p.name })));
@@ -209,8 +210,16 @@ export default function AutomationsModal({ pipelineId, pipeline, canManage, onCl
                 <button type="button" className="secondary-button" onClick={() => setShowTemplates((v) => !v)}>
                   {showTemplates ? 'Fechar modelos de e-mail' : 'Modelos de e-mail'}
                 </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowContractTemplates((v) => !v)}
+                >
+                  {showContractTemplates ? 'Fechar modelos de contrato' : 'Modelos de contrato'}
+                </button>
               </div>
               {showTemplates && <EmailTemplatesSection pipelineId={pipelineId} />}
+              {showContractTemplates && <ContractTemplatesSection pipelineId={pipelineId} />}
               {showForm && (
                 <AutomationForm
                   pipelineId={pipelineId}
@@ -303,6 +312,78 @@ function EmailTemplatesSection({ pipelineId }: { pipelineId: number }) {
         <label className="field-input">
           Corpo (HTML — use {'{{title}}'} e {'{{campo.<key>}}'} para interpolar)
           <textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={4} />
+        </label>
+        <button type="submit" disabled={createMutation.isPending}>
+          {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
+          Criar modelo
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ContractTemplatesSection({ pipelineId }: { pipelineId: number }) {
+  const queryClient = useQueryClient();
+  const { data: templates } = useQuery({
+    queryKey: ['contract-templates', pipelineId],
+    queryFn: () => PipelinesApi.listContractTemplates(pipelineId),
+  });
+  const [name, setName] = useState('');
+  const [bodyHtml, setBodyHtml] = useState('');
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['contract-templates', pipelineId] });
+
+  const createMutation = useMutation({
+    mutationFn: () => PipelinesApi.createContractTemplate(pipelineId, { name, body_html: bodyHtml }),
+    onSuccess: () => {
+      invalidate();
+      setName('');
+      setBodyHtml('');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => PipelinesApi.deleteContractTemplate(pipelineId, id),
+    onSuccess: invalidate,
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !bodyHtml.trim()) return;
+    createMutation.mutate();
+  }
+
+  return (
+    <div className="automation-form">
+      <ul className="automation-list">
+        {templates?.map((t) => (
+          <li key={t.id} className="automation-row">
+            <div className="automation-info">
+              <span className="member-name">{t.name}</span>
+            </div>
+            <button
+              type="button"
+              className="icon-button"
+              title="Excluir modelo"
+              onClick={() => {
+                if (confirm(`Excluir o modelo "${t.name}"?`)) deleteMutation.mutate(t.id);
+              }}
+            >
+              <Icon name="x" size={14} />
+            </button>
+          </li>
+        ))}
+        {templates?.length === 0 && <p className="muted">Nenhum modelo de contrato criado ainda.</p>}
+      </ul>
+
+      <form onSubmit={handleSubmit} className="field-grid">
+        <label className="field-input">
+          Nome do modelo
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label className="field-input">
+          Corpo (HTML — use {'{{title}}'} e {'{{campo.<key>}}'} para interpolar)
+          <textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={8} />
         </label>
         <button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending && <span className="button-spinner" aria-hidden="true" />}

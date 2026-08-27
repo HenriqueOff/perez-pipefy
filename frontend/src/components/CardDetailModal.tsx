@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
+import { openHtmlDocument } from '../utils/openHtmlDocument';
 import { DatabasesApi } from '../api/databases';
 import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
 import { roleAtLeast } from '../utils/roles';
@@ -31,6 +32,15 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
   const { data: comments } = useQuery({
     queryKey: ['comments', pipelineId, cardId],
     queryFn: () => PipelinesApi.listComments(pipelineId, cardId),
+  });
+  const { data: contractTemplates } = useQuery({
+    queryKey: ['contract-templates', pipelineId],
+    queryFn: () => PipelinesApi.listContractTemplates(pipelineId),
+  });
+
+  const generateContractMutation = useMutation({
+    mutationFn: (templateId: number) => PipelinesApi.generateContract(pipelineId, cardId, templateId),
+    onSuccess: openHtmlDocument,
   });
 
   const [commentBody, setCommentBody] = useState('');
@@ -186,6 +196,28 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
 
           <h3>Anexos</h3>
           <AttachmentList pipelineId={pipelineId} cardId={cardId} canEdit={canEdit} />
+
+          {contractTemplates != null && contractTemplates.length > 0 && (
+            <>
+              <h3>Gerar contrato</h3>
+              <div className="page-header-actions">
+                {contractTemplates.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => generateContractMutation.mutate(t.id)}
+                    disabled={generateContractMutation.isPending}
+                  >
+                    {generateContractMutation.isPending && generateContractMutation.variables === t.id && (
+                      <span className="button-spinner" aria-hidden="true" />
+                    )}
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <h3>Cards conectados</h3>
           <ConnectedCardsSection pipelineId={pipelineId} cardId={cardId} canEdit={canEdit} />

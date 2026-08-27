@@ -55,7 +55,7 @@ function matchesTrigger(config: Record<string, unknown> | null, context: Trigger
   }
 }
 
-async function loadCardFieldsByKey(cardId: number, pipelineId: number, title: string): Promise<Record<string, unknown>> {
+export async function loadCardFieldsByKey(cardId: number, pipelineId: number, title: string): Promise<Record<string, unknown>> {
   const [fieldValues, customFields] = await Promise.all([
     CardFieldValueModel.listByCard(cardId),
     CustomFieldModel.listByPipeline(pipelineId),

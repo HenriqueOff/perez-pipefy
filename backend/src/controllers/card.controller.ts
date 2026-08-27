@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CardService } from '../services/card.service';
 import { SearchService } from '../services/search.service';
+import { ContractTemplateService } from '../services/contractTemplate.service';
 
 export const CardController = {
   async list(req: Request, res: Response) {
@@ -64,5 +65,14 @@ export const CardController = {
   async remove(req: Request, res: Response) {
     await CardService.delete(Number(req.params.cardId), Number(req.params.pipelineId));
     res.status(204).send();
+  },
+
+  async generateContract(req: Request, res: Response) {
+    const html = await ContractTemplateService.generate(
+      Number(req.params.cardId),
+      Number(req.params.pipelineId),
+      Number(req.params.templateId)
+    );
+    res.type('html').send(html);
   },
 };
