@@ -35,3 +35,7 @@ export const confirmTwoFactorSchema = z.object({
 export const disableTwoFactorSchema = z.object({
   password: z.string().min(1),
 });
+
+export const updateThemeSchema = z.object({
+  theme_preference: z.enum(['system', 'light', 'dark']),
+});

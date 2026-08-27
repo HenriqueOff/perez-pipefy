@@ -88,6 +88,7 @@ export const AuthController = {
       role: user.global_role,
       must_change_password: user.must_change_password,
       totp_enabled: user.totp_enabled,
+      theme_preference: user.theme_preference,
     });
   },
 
@@ -100,7 +101,13 @@ export const AuthController = {
       role: user.global_role,
       must_change_password: user.must_change_password,
       totp_enabled: user.totp_enabled,
+      theme_preference: user.theme_preference,
     });
+  },
+
+  async updateTheme(req: Request, res: Response) {
+    const user = await AuthService.updateThemePreference(req.user!.id, req.body.theme_preference);
+    res.json({ theme_preference: user.theme_preference });
   },
 
   async changePassword(req: Request, res: Response) {

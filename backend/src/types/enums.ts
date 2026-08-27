@@ -1,5 +1,7 @@
 export type GlobalRole = 'admin' | 'member';
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
 export type PipelineRole = 'owner' | 'manager' | 'editor' | 'viewer';
 
 export type CustomFieldType =

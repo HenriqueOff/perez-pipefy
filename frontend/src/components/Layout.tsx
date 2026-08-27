@@ -7,6 +7,7 @@ import { DatabasesApi } from '../api/databases';
 import Avatar from './Avatar';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from './ThemeToggle';
 import Icon from './Icon';
 
 export default function Layout() {
@@ -97,6 +98,7 @@ export default function Layout() {
           </NavLink>
           <GlobalSearch />
           <div className="header-right">
+            <ThemeToggle />
             <NotificationBell />
             <Link to="/profile" className="topbar-profile-link">
               {user && <Avatar name={user.name} size={28} />}

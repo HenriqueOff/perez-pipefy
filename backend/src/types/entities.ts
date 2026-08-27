@@ -9,6 +9,7 @@ import {
   PipelineRole,
   SyncDirection,
   SyncStatus,
+  ThemePreference,
 } from './enums';
 
 export interface UserRow {
@@ -21,6 +22,7 @@ export interface UserRow {
   must_change_password: boolean;
   totp_secret_encrypted: string | null;
   totp_enabled: boolean;
+  theme_preference: ThemePreference;
   created_at: Date;
   updated_at: Date;
 }

@@ -1,6 +1,6 @@
 import { db } from '../config/db';
 import { UserRow } from '../types/entities';
-import { GlobalRole } from '../types/enums';
+import { GlobalRole, ThemePreference } from '../types/enums';
 
 const TABLE = 'users';
 
@@ -71,5 +71,13 @@ export const UserModel = {
     return db<UserRow>(TABLE)
       .where({ id })
       .update({ totp_secret_encrypted: null, totp_enabled: false, updated_at: db.fn.now() });
+  },
+
+  updateThemePreference(id: number, theme_preference: ThemePreference) {
+    return db<UserRow>(TABLE)
+      .where({ id })
+      .update({ theme_preference, updated_at: db.fn.now() })
+      .returning('*')
+      .then((rows) => rows[0]);
   },
 };

@@ -13,6 +13,8 @@ export type CustomFieldType =
   | 'phone';
 export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
 export interface User {
   id: number;
   name: string;
@@ -20,6 +22,7 @@ export interface User {
   role: GlobalRole;
   must_change_password: boolean;
   totp_enabled: boolean;
+  theme_preference: ThemePreference;
 }
 
 export interface Session {

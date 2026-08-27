@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { api, setAccessToken } from '../api/client';
 import { User } from '../types';
+import { applyTheme, getStoredTheme } from '../utils/theme';
 
 type LoginResult = { twoFactorRequired: true; tempToken: string } | { twoFactorRequired: false };
 
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(data.accessToken);
         const me = await api.get('/auth/me');
         setUser(me.data);
+        applyTheme(me.data.theme_preference);
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setAccessToken(data.accessToken);
     setUser(data.user);
+    applyTheme(data.user.theme_preference);
     return { twoFactorRequired: false };
   }
 
@@ -46,12 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await api.post('/auth/login/verify-2fa', { tempToken, code });
     setAccessToken(data.accessToken);
     setUser(data.user);
+    applyTheme(data.user.theme_preference);
   }
 
   async function logout() {
     await api.post('/auth/logout').catch(() => undefined);
     setAccessToken(null);
     setUser(null);
+    // Volta pra preferência salva neste navegador (a de conta some junto com a sessão) —
+    // senão a tela de login ficaria "presa" no tema da conta que acabou de sair.
+    applyTheme(getStoredTheme());
   }
 
   return (

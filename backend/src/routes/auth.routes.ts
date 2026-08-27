@@ -13,6 +13,7 @@ import {
   loginSchema,
   resetPasswordSchema,
   updateProfileSchema,
+  updateThemeSchema,
   verifyTwoFactorSchema,
 } from '../validators/auth.schema';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -29,6 +30,7 @@ router.post(
 router.post('/refresh', asyncHandler(AuthController.refresh));
 router.get('/me', authenticate, asyncHandler(AuthController.me));
 router.patch('/me', authenticate, validateBody(updateProfileSchema), asyncHandler(AuthController.updateMe));
+router.patch('/theme', authenticate, validateBody(updateThemeSchema), asyncHandler(AuthController.updateTheme));
 router.post('/logout', asyncHandler(AuthController.logout));
 router.post(
   '/change-password',

@@ -1,10 +1,13 @@
 import { api } from './client';
-import { Session, User } from '../types';
+import { Session, ThemePreference, User } from '../types';
 
 export const AuthApi = {
   me: () => api.get<User>('/auth/me').then((r) => r.data),
 
   updateProfile: (changes: { name: string }) => api.patch<User>('/auth/me', changes).then((r) => r.data),
+
+  updateTheme: (theme_preference: ThemePreference) =>
+    api.patch<{ theme_preference: ThemePreference }>('/auth/theme', { theme_preference }).then((r) => r.data),
 
   changePassword: (input: { currentPassword: string; newPassword: string }) =>
     api.post<{ accessToken: string }>('/auth/change-password', input).then((r) => r.data),

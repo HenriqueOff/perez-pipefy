@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,6 +14,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
       <div className="auth-form-panel">
+        <div className="auth-theme-toggle">
+          <ThemeToggle />
+        </div>
         <div className="auth-form-content">{children}</div>
       </div>
     </div>

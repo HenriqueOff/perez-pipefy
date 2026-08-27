@@ -6,17 +6,10 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import PasswordInput from '../components/PasswordInput';
 import { parseUserAgent } from '../utils/userAgent';
-import { getStoredTheme, setTheme, ThemePreference } from '../utils/theme';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
   member: 'Membro',
-};
-
-const THEME_LABELS: Record<ThemePreference, string> = {
-  system: 'Igual ao sistema',
-  light: 'Claro',
-  dark: 'Escuro',
 };
 
 export default function ProfilePage() {
@@ -42,13 +35,6 @@ export default function ProfilePage() {
   const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
   const [disablePassword, setDisablePassword] = useState('');
   const [showDisableForm, setShowDisableForm] = useState(false);
-
-  const [themePreference, setThemePreference] = useState<ThemePreference>(getStoredTheme());
-
-  function handleThemeChange(pref: ThemePreference) {
-    setTheme(pref);
-    setThemePreference(pref);
-  }
 
   const profileMutation = useMutation({
     mutationFn: () => AuthApi.updateProfile({ name: name.trim() }),
@@ -177,20 +163,6 @@ export default function ProfilePage() {
           </p>
         </div>
       </div>
-
-      <section className="settings-card">
-        <h2 className="section-title">Aparência</h2>
-        <label className="field-input">
-          Tema
-          <select value={themePreference} onChange={(e) => handleThemeChange(e.target.value as ThemePreference)}>
-            {(Object.keys(THEME_LABELS) as ThemePreference[]).map((key) => (
-              <option key={key} value={key}>
-                {THEME_LABELS[key]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </section>
 
       <section className="settings-card">
         <h2 className="section-title">Nome</h2>
