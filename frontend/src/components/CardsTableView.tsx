@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import { Card, Phase, PipelineMember } from '../types';
 import { listSavedFilters, saveFilter, deleteFilter } from '../utils/savedFilters';
+import { downloadCsv } from '../utils/exportCsv';
 import Avatar from './Avatar';
 
 function formatDate(value: string | null): string {
@@ -113,6 +114,19 @@ export default function CardsTableView({
     setSavedFilters(deleteFilter(filtersStorageKey, name));
   }
 
+  function handleExportCsv() {
+    const headers = ['Card', 'Fase', 'Etiquetas', 'Responsáveis', 'Prazo'];
+    const rows = sorted.map((card) => [
+      card.title,
+      phaseById.get(card.current_phase_id)?.name ?? '',
+      card.labels.map((l) => l.name).join('; '),
+      card.assignees.map((a) => a.name).join('; '),
+      formatDate(card.due_date),
+    ]);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCsv(`cards-pipeline-${pipelineId}-${date}.csv`, headers, rows);
+  }
+
   const allSelected = sorted.length > 0 && sorted.every((c) => selectedIds.has(c.id));
 
   function toggleAll() {
@@ -167,6 +181,10 @@ export default function CardsTableView({
           />
           Só atrasados
         </label>
+
+        <button type="button" className="secondary-button" onClick={handleExportCsv} disabled={sorted.length === 0}>
+          Exportar CSV
+        </button>
 
         {hasActiveFilters && (
           <button type="button" className="secondary-button" onClick={() => setFilters(EMPTY_FILTERS)}>
