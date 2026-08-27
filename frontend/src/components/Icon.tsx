@@ -40,6 +40,7 @@ const ICONS: Record<string, IconElement[]> = {
     { type: 'path', d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z' },
     { type: 'circle', cx: 12, cy: 12, r: 3 },
   ],
+  menu: [{ type: 'path', d: 'M3 6h18M3 12h18M3 18h18' }],
   eyeOff: [
     {
       type: 'path',

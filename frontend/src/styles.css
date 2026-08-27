@@ -132,6 +132,8 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .login-card {
@@ -142,7 +144,8 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 340px;
+  width: min(340px, 100%);
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
 }
 
@@ -454,6 +457,15 @@ textarea:focus {
   color: var(--color-text);
 }
 
+.sidebar-toggle {
+  display: none;
+  flex-shrink: 0;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
 .global-search {
   position: relative;
   flex: 1;
@@ -571,6 +583,7 @@ textarea:focus {
   top: calc(100% + 8px);
   right: 0;
   width: 340px;
+  max-width: calc(100vw - 24px);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -1979,7 +1992,7 @@ button svg {
 }
 
 .public-form-card {
-  width: 420px;
+  width: min(420px, 100%);
 }
 
 /* ---------- Dashboard ---------- */
@@ -2363,4 +2376,81 @@ button svg {
 
 .kanban-card-checklist {
   font-size: 12px;
+}
+
+/* ---------- Responsivo (mobile) ---------- */
+
+@media (max-width: 900px) {
+  .sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 200;
+    width: 260px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-md);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 18, 33, 0.45);
+    z-index: 150;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-topbar {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .topbar-home-link {
+    display: none;
+  }
+
+  .topbar-profile-name {
+    display: none;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .app-main {
+    padding: 14px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .page-header-actions,
+  .bulk-actions-bar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 700px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .modal {
+    max-width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+  }
 }

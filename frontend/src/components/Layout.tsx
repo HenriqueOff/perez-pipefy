@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { PipelinesApi } from '../api/pipelines';
@@ -6,15 +7,25 @@ import { DatabasesApi } from '../api/databases';
 import Avatar from './Avatar';
 import GlobalSearch from './GlobalSearch';
 import NotificationBell from './NotificationBell';
+import Icon from './Icon';
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const { data: pipelines } = useQuery({ queryKey: ['pipelines'], queryFn: PipelinesApi.list });
   const { data: databases } = useQuery({ queryKey: ['databases'], queryFn: DatabasesApi.list });
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const location = useLocation();
+
+  // Fecha o menu ao navegar — sem isso, o drawer ficaria aberto por cima da página nova
+  // depois de tocar num link, já que a troca de rota não desmonta o Layout.
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {mobileNavOpen && <div className="sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+      <aside className={`sidebar ${mobileNavOpen ? 'sidebar-open' : ''}`}>
         <Link to="/" className="brand">
           Pipelines <span className="brand-sub">PEREZ &amp; FILHO</span>
         </Link>
@@ -73,6 +84,14 @@ export default function Layout() {
 
       <div className="app-content">
         <header className="app-topbar">
+          <button
+            type="button"
+            className="icon-button sidebar-toggle"
+            aria-label="Abrir menu"
+            onClick={() => setMobileNavOpen((v) => !v)}
+          >
+            <Icon name="menu" size={20} />
+          </button>
           <NavLink to="/" end className="topbar-home-link">
             Todos os pipelines
           </NavLink>
@@ -81,7 +100,7 @@ export default function Layout() {
             <NotificationBell />
             <Link to="/profile" className="topbar-profile-link">
               {user && <Avatar name={user.name} size={28} />}
-              <span>{user?.name}</span>
+              <span className="topbar-profile-name">{user?.name}</span>
             </Link>
             <button className="secondary-button" onClick={() => logout()}>
               Sair
