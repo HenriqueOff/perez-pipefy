@@ -2111,6 +2111,23 @@ button svg {
   border-bottom-color: var(--color-primary);
 }
 
+.bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-soft-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bulk-actions-bar select {
+  font-size: 13px;
+}
+
 .cards-table-row {
   cursor: pointer;
 }

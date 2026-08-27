@@ -219,9 +219,11 @@ export default function PipelineBoardPage() {
 
       {viewMode === 'table' && (
         <CardsTableView
+          pipelineId={id}
           cards={cards}
           phases={pipeline.phases}
           members={pipeline.members}
+          canEdit={canEdit}
           onCardClick={(card) => setSelectedCardId(card.id)}
         />
       )}
