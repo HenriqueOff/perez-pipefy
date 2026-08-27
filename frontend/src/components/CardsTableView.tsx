@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import { Card, Phase, PipelineMember } from '../types';
+import { listSavedFilters, saveFilter, deleteFilter } from '../utils/savedFilters';
 import Avatar from './Avatar';
 
 function formatDate(value: string | null): string {
@@ -10,10 +11,26 @@ function formatDate(value: string | null): string {
   return `${day}/${month}/${year}`;
 }
 
+interface TableFilters {
+  phaseId: number | '';
+  labelId: number | '';
+  assigneeId: number | '';
+  overdueOnly: boolean;
+}
+
+const EMPTY_FILTERS: TableFilters = { phaseId: '', labelId: '', assigneeId: '', overdueOnly: false };
+
+function isOverdue(card: Card): boolean {
+  // Comparação de string YYYY-MM-DD já ordena igual a data — um card com vencimento
+  // hoje não conta como atrasado, só a partir do dia seguinte.
+  return !!card.due_date && card.due_date < new Date().toISOString().slice(0, 10);
+}
+
 export default function CardsTableView({
   pipelineId,
   cards,
   phases,
+  members,
   canEdit,
   onCardClick,
 }: {
@@ -27,11 +44,14 @@ export default function CardsTableView({
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<TableFilters>(EMPTY_FILTERS);
+  const [savingFilterName, setSavingFilterName] = useState<string | null>(null);
+  const filtersStorageKey = `table-filters-${pipelineId}`;
+  const [savedFilters, setSavedFilters] = useState(() => listSavedFilters<TableFilters>(filtersStorageKey));
 
   const { data: labels } = useQuery({
     queryKey: ['labels', pipelineId],
     queryFn: () => PipelinesApi.listLabels(pipelineId),
-    enabled: selectedIds.size > 0,
   });
 
   const invalidateCards = () => queryClient.invalidateQueries({ queryKey: ['cards', pipelineId] });
@@ -62,11 +82,36 @@ export default function CardsTableView({
 
   const phaseById = new Map(phases.map((p) => [p.id, p]));
 
-  const sorted = [...cards].sort((a, b) => {
+  const filtered = cards.filter((card) => {
+    if (filters.phaseId !== '' && card.current_phase_id !== filters.phaseId) return false;
+    if (filters.labelId !== '' && !card.labels.some((l) => l.id === filters.labelId)) return false;
+    if (filters.assigneeId !== '' && !card.assignees.some((a) => a.user_id === filters.assigneeId)) return false;
+    if (filters.overdueOnly && !isOverdue(card)) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
     const posA = phases.findIndex((p) => p.id === a.current_phase_id);
     const posB = phases.findIndex((p) => p.id === b.current_phase_id);
     return posA - posB || a.position - b.position;
   });
+
+  const hasActiveFilters = filters.phaseId !== '' || filters.labelId !== '' || filters.assigneeId !== '' || filters.overdueOnly;
+
+  function applySavedFilter(name: string) {
+    const found = savedFilters.find((f) => f.name === name);
+    if (found) setFilters(found.value);
+  }
+
+  function handleSaveFilter() {
+    if (!savingFilterName?.trim()) return;
+    setSavedFilters(saveFilter(filtersStorageKey, savingFilterName.trim(), filters));
+    setSavingFilterName(null);
+  }
+
+  function handleDeleteSavedFilter(name: string) {
+    setSavedFilters(deleteFilter(filtersStorageKey, name));
+  }
 
   const allSelected = sorted.length > 0 && sorted.every((c) => selectedIds.has(c.id));
 
@@ -86,6 +131,94 @@ export default function CardsTableView({
 
   return (
     <>
+      <div className="table-filters-bar">
+        <select value={filters.phaseId} onChange={(e) => setFilters((f) => ({ ...f, phaseId: e.target.value ? Number(e.target.value) : '' }))}>
+          <option value="">Todas as fases</option>
+          {phases.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select value={filters.labelId} onChange={(e) => setFilters((f) => ({ ...f, labelId: e.target.value ? Number(e.target.value) : '' }))}>
+          <option value="">Todas as etiquetas</option>
+          {labels?.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filters.assigneeId}
+          onChange={(e) => setFilters((f) => ({ ...f, assigneeId: e.target.value ? Number(e.target.value) : '' }))}
+        >
+          <option value="">Todos os responsáveis</option>
+          {members.map((m) => (
+            <option key={m.user_id} value={m.user_id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={filters.overdueOnly}
+            onChange={(e) => setFilters((f) => ({ ...f, overdueOnly: e.target.checked }))}
+          />
+          Só atrasados
+        </label>
+
+        {hasActiveFilters && (
+          <button type="button" className="secondary-button" onClick={() => setFilters(EMPTY_FILTERS)}>
+            Limpar filtros
+          </button>
+        )}
+
+        {hasActiveFilters &&
+          (savingFilterName === null ? (
+            <button type="button" className="link-button" onClick={() => setSavingFilterName('')}>
+              Salvar filtro...
+            </button>
+          ) : (
+            <span className="table-filters-save">
+              <input
+                autoFocus
+                placeholder="Nome do filtro"
+                value={savingFilterName}
+                onChange={(e) => setSavingFilterName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveFilter()}
+              />
+              <button type="button" onClick={handleSaveFilter} disabled={!savingFilterName.trim()}>
+                Salvar
+              </button>
+              <button type="button" className="secondary-button" onClick={() => setSavingFilterName(null)}>
+                Cancelar
+              </button>
+            </span>
+          ))}
+      </div>
+
+      {savedFilters.length > 0 && (
+        <div className="table-filters-chips">
+          <span className="muted">Filtros salvos:</span>
+          {savedFilters.map((f) => (
+            <span key={f.name} className="assignee-chip">
+              <button type="button" className="link-button" onClick={() => applySavedFilter(f.name)}>
+                {f.name}
+              </button>
+              <button
+                type="button"
+                className="assignee-chip-remove"
+                title="Excluir filtro salvo"
+                onClick={() => handleDeleteSavedFilter(f.name)}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {canEdit && selectedIds.size > 0 && (
         <div className="bulk-actions-bar">
           <span>{selectedIds.size} card{selectedIds.size === 1 ? '' : 's'} selecionado{selectedIds.size === 1 ? '' : 's'}</span>

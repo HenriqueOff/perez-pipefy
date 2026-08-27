@@ -485,6 +485,15 @@ textarea:focus {
   color: var(--color-text-faint);
 }
 
+.global-search-recent-label {
+  padding: 8px 14px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+
 .global-search-result {
   display: flex;
   flex-direction: column;
@@ -2109,6 +2118,37 @@ button svg {
   color: var(--color-primary);
   font-weight: 700;
   border-bottom-color: var(--color-primary);
+}
+
+.table-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.table-filters-bar select {
+  font-size: 13px;
+}
+
+.table-filters-save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-filters-save input {
+  font-size: 13px;
+  width: 160px;
+}
+
+.table-filters-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .bulk-actions-bar {
