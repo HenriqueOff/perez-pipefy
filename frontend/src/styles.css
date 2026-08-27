@@ -32,6 +32,59 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+/* Modo escuro: aplica quando o sistema pede dark E o usuário não escolheu "Claro" no
+   perfil, ou quando o usuário escolheu "Escuro" explicitamente (esse bloco de baixo vence
+   o de cima, já que vem depois no cascade). Cores de marca/acento (primary, danger) ficam
+   as mesmas nos dois temas — só os tons "soft" (fundo claro pastel) precisam de uma versão
+   escura própria, senão viram um retângulo claro destoando do resto da tela escura. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #131120;
+    --color-surface: #1c1930;
+    --color-surface-2: #242038;
+    --color-border: #322c49;
+    --color-text: #f1eff9;
+    --color-text-muted: #a9a4c0;
+    --color-text-faint: #756f8f;
+
+    --color-primary-soft: #262148;
+    --color-primary-soft-border: #3a3266;
+
+    --color-danger-soft: #3a1f22;
+
+    --color-success: #34d399;
+    --color-success-soft: #163825;
+    --color-warning: #fbbf24;
+    --color-warning-soft: #3a2a0d;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #131120;
+  --color-surface: #1c1930;
+  --color-surface-2: #242038;
+  --color-border: #322c49;
+  --color-text: #f1eff9;
+  --color-text-muted: #a9a4c0;
+  --color-text-faint: #756f8f;
+
+  --color-primary-soft: #262148;
+  --color-primary-soft-border: #3a3266;
+
+  --color-danger-soft: #3a1f22;
+
+  --color-success: #34d399;
+  --color-success-soft: #163825;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #3a2a0d;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -763,7 +816,10 @@ textarea:focus {
   border-radius: 12px;
   padding: 14px;
   text-decoration: none;
-  color: var(--color-text);
+  /* Fixo (não usa var(--color-text)): o fundo pastel do tile vem de TILE_PALETTE e não
+     muda com o tema, então o texto por cima também precisa ficar fixo — do contrário
+     texto quase branco do modo escuro fica ilegível sobre o pastel claro. */
+  color: #1e1b2e;
   border: none;
   box-shadow: none;
   display: flex;
@@ -785,6 +841,9 @@ textarea:focus {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* O h3 global usa var(--color-text-muted) (cinza claro no modo escuro) — aqui o fundo é
+     sempre o pastel fixo do tile, então a cor do texto também precisa ficar fixa. */
+  color: #666278;
 }
 
 .pipeline-card-icon {
@@ -802,7 +861,7 @@ textarea:focus {
 
 .pipeline-card-count {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #666278;
 }
 
 .pipeline-card-alert {
