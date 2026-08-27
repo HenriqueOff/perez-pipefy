@@ -19,6 +19,8 @@ export interface UserRow {
   global_role: GlobalRole;
   active: boolean;
   must_change_password: boolean;
+  totp_secret_encrypted: string | null;
+  totp_enabled: boolean;
   created_at: Date;
   updated_at: Date;
 }

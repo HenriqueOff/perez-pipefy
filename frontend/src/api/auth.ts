@@ -12,4 +12,10 @@ export const AuthApi = {
   listSessions: () => api.get<Session[]>('/auth/sessions').then((r) => r.data),
 
   revokeSession: (id: number) => api.delete(`/auth/sessions/${id}`).then((r) => r.data),
+
+  setupTwoFactor: () => api.post<{ secret: string; qrCodeDataUrl: string }>('/auth/2fa/setup').then((r) => r.data),
+
+  confirmTwoFactor: (code: string) => api.post('/auth/2fa/confirm', { code }).then((r) => r.data),
+
+  disableTwoFactor: (password: string) => api.post('/auth/2fa/disable', { password }).then((r) => r.data),
 };

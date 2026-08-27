@@ -27,8 +27,34 @@ export const AuthController = {
   async login(req: Request, res: Response) {
     const { email, password } = req.body;
     const result = await AuthService.login(email, password, req.headers['user-agent']);
+    if (result.twoFactorRequired) {
+      res.json({ twoFactorRequired: true, tempToken: result.tempToken });
+      return;
+    }
+    setRefreshCookie(res, result.refreshToken);
+    res.json({ twoFactorRequired: false, accessToken: result.accessToken, user: result.user });
+  },
+
+  async verifyTwoFactorLogin(req: Request, res: Response) {
+    const { tempToken, code } = req.body;
+    const result = await AuthService.verifyTwoFactorLogin(tempToken, code, req.headers['user-agent']);
     setRefreshCookie(res, result.refreshToken);
     res.json({ accessToken: result.accessToken, user: result.user });
+  },
+
+  async setupTwoFactor(req: Request, res: Response) {
+    const result = await AuthService.setupTwoFactor(req.user!.id);
+    res.json(result);
+  },
+
+  async confirmTwoFactor(req: Request, res: Response) {
+    await AuthService.confirmTwoFactor(req.user!.id, req.body.code);
+    res.status(204).send();
+  },
+
+  async disableTwoFactor(req: Request, res: Response) {
+    await AuthService.disableTwoFactor(req.user!.id, req.body.password);
+    res.status(204).send();
   },
 
   async refresh(req: Request, res: Response) {
@@ -61,6 +87,7 @@ export const AuthController = {
       email: user.email,
       role: user.global_role,
       must_change_password: user.must_change_password,
+      totp_enabled: user.totp_enabled,
     });
   },
 
@@ -72,6 +99,7 @@ export const AuthController = {
       email: user.email,
       role: user.global_role,
       must_change_password: user.must_change_password,
+      totp_enabled: user.totp_enabled,
     });
   },
 

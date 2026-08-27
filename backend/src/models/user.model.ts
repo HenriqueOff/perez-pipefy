@@ -54,4 +54,22 @@ export const UserModel = {
       .where({ id })
       .update({ password_hash, must_change_password: false, updated_at: db.fn.now() });
   },
+
+  // Gera/regera o secret "pendente": fica salvo mas totp_enabled continua false até
+  // confirmTotp() validar um código, então login nenhum passa a exigir 2FA só por isso.
+  setPendingTotpSecret(id: number, encryptedSecret: string) {
+    return db<UserRow>(TABLE)
+      .where({ id })
+      .update({ totp_secret_encrypted: encryptedSecret, totp_enabled: false, updated_at: db.fn.now() });
+  },
+
+  confirmTotp(id: number) {
+    return db<UserRow>(TABLE).where({ id }).update({ totp_enabled: true, updated_at: db.fn.now() });
+  },
+
+  disableTotp(id: number) {
+    return db<UserRow>(TABLE)
+      .where({ id })
+      .update({ totp_secret_encrypted: null, totp_enabled: false, updated_at: db.fn.now() });
+  },
 };

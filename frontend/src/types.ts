@@ -18,6 +18,7 @@ export interface User {
   email: string;
   role: GlobalRole;
   must_change_password: boolean;
+  totp_enabled: boolean;
 }
 
 export interface Session {

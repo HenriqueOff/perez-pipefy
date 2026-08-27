@@ -699,6 +699,27 @@ textarea:focus {
   margin: 0 0 12px;
 }
 
+.two-factor-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.two-factor-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.two-factor-qr {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
 .stacked-form {
   display: flex;
   flex-direction: column;

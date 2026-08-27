@@ -29,6 +29,13 @@ export default function ProfilePage() {
     queryFn: AuthApi.listSessions,
   });
 
+  const [twoFactorSetup, setTwoFactorSetup] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorMessage, setTwoFactorMessage] = useState<string | null>(null);
+  const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [showDisableForm, setShowDisableForm] = useState(false);
+
   const profileMutation = useMutation({
     mutationFn: () => AuthApi.updateProfile({ name: name.trim() }),
     onSuccess: (updated) => {
@@ -60,6 +67,48 @@ export default function ProfilePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sessions'] }),
   });
 
+  const setupTwoFactorMutation = useMutation({
+    mutationFn: AuthApi.setupTwoFactor,
+    onSuccess: (data) => {
+      setTwoFactorSetup(data);
+      setTwoFactorMessage(null);
+      setTwoFactorError(null);
+    },
+    onError: () => setTwoFactorError('Não foi possível iniciar a configuração do 2FA.'),
+  });
+
+  const confirmTwoFactorMutation = useMutation({
+    mutationFn: (code: string) => AuthApi.confirmTwoFactor(code),
+    onSuccess: () => {
+      setTwoFactorSetup(null);
+      setTwoFactorCode('');
+      setTwoFactorError(null);
+      setTwoFactorMessage('Autenticação em duas etapas ativada.');
+      setUser({ ...user!, totp_enabled: true });
+    },
+    onError: (err: unknown) => {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setTwoFactorMessage(null);
+      setTwoFactorError(message ?? 'Código inválido.');
+    },
+  });
+
+  const disableTwoFactorMutation = useMutation({
+    mutationFn: (password: string) => AuthApi.disableTwoFactor(password),
+    onSuccess: () => {
+      setShowDisableForm(false);
+      setDisablePassword('');
+      setTwoFactorError(null);
+      setTwoFactorMessage('Autenticação em duas etapas desativada.');
+      setUser({ ...user!, totp_enabled: false });
+    },
+    onError: (err: unknown) => {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setTwoFactorMessage(null);
+      setTwoFactorError(message ?? 'Não foi possível desativar o 2FA.');
+    },
+  });
+
   function handleProfileSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -80,6 +129,18 @@ export default function ProfilePage() {
       return;
     }
     passwordMutation.mutate();
+  }
+
+  function handleConfirmTwoFactor(e: FormEvent) {
+    e.preventDefault();
+    if (twoFactorCode.length !== 6) return;
+    confirmTwoFactorMutation.mutate(twoFactorCode);
+  }
+
+  function handleDisableTwoFactor(e: FormEvent) {
+    e.preventDefault();
+    if (!disablePassword) return;
+    disableTwoFactorMutation.mutate(disablePassword);
   }
 
   if (!user) return null;
@@ -173,6 +234,95 @@ export default function ProfilePage() {
         </ul>
         {!loadingSessions && sessions?.length === 0 && <p className="muted">Nenhuma sessão ativa.</p>}
       </section>
+
+      {user.role === 'admin' && (
+        <section className="settings-card">
+          <h2 className="section-title">Autenticação em duas etapas</h2>
+          <p className="muted">
+            Disponível pra contas administradoras. Exige um código do seu app autenticador a cada login.
+          </p>
+
+          {twoFactorMessage && <p className="success">{twoFactorMessage}</p>}
+          {twoFactorError && <p className="error">{twoFactorError}</p>}
+
+          {user.totp_enabled && !showDisableForm && (
+            <div className="two-factor-status">
+              <span className="role-badge">Ativado</span>
+              <button type="button" className="secondary-button" onClick={() => setShowDisableForm(true)}>
+                Desativar
+              </button>
+            </div>
+          )}
+
+          {user.totp_enabled && showDisableForm && (
+            <form className="inline-form" onSubmit={handleDisableTwoFactor}>
+              <PasswordInput
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+                placeholder="Confirme sua senha"
+                required
+              />
+              <button type="submit" disabled={disableTwoFactorMutation.isPending}>
+                {disableTwoFactorMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
+                Confirmar desativação
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setShowDisableForm(false);
+                  setDisablePassword('');
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          )}
+
+          {!user.totp_enabled && !twoFactorSetup && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setupTwoFactorMutation.mutate()}
+              disabled={setupTwoFactorMutation.isPending}
+            >
+              {setupTwoFactorMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
+              Ativar
+            </button>
+          )}
+
+          {!user.totp_enabled && twoFactorSetup && (
+            <div className="two-factor-setup">
+              <p className="muted">
+                Escaneie o QR code com seu app autenticador (Google Authenticator, Authy...) e digite o código gerado
+                pra confirmar.
+              </p>
+              <img src={twoFactorSetup.qrCodeDataUrl} alt="QR code de configuração do 2FA" className="two-factor-qr" />
+              <p className="muted">
+                Ou digite manualmente: <code>{twoFactorSetup.secret}</code>
+              </p>
+              <form className="inline-form" onSubmit={handleConfirmTwoFactor}>
+                <input
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  placeholder="Código de 6 dígitos"
+                  required
+                />
+                <button type="submit" disabled={confirmTwoFactorMutation.isPending || twoFactorCode.length !== 6}>
+                  {confirmTwoFactorMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
+                  Confirmar
+                </button>
+                <button type="button" className="link-button" onClick={() => setTwoFactorSetup(null)}>
+                  Cancelar
+                </button>
+              </form>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

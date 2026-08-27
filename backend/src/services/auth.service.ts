@@ -1,17 +1,40 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import { signAccessToken } from '../config/jwt';
+import { signAccessToken, signPendingTwoFactorToken, verifyPendingTwoFactorToken } from '../config/jwt';
 import { env } from '../config/env';
 import { RefreshTokenModel } from '../models/refreshToken.model';
 import { PasswordResetTokenModel } from '../models/passwordResetToken.model';
 import { UserModel } from '../models/user.model';
+import { UserRow } from '../types/entities';
 import { AppError } from '../utils/AppError';
 import { MailService } from './mail.service';
+import { TotpService } from './totp.service';
 
 const RESET_TOKEN_EXPIRES_IN_MS = 60 * 60 * 1000; // 1h
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+async function issueSession(user: UserRow, userAgent?: string) {
+  const accessToken = signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: user.must_change_password });
+
+  const refreshToken = crypto.randomBytes(48).toString('hex');
+  const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
+  await RefreshTokenModel.create(user.id, hashToken(refreshToken), expiresAt, userAgent);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.global_role,
+      must_change_password: user.must_change_password,
+      totp_enabled: user.totp_enabled,
+    },
+  };
 }
 
 export const AuthService = {
@@ -26,23 +49,74 @@ export const AuthService = {
       throw AppError.unauthorized('Credenciais inválidas');
     }
 
-    const accessToken = signAccessToken({ sub: user.id, role: user.global_role, mustChangePassword: user.must_change_password });
+    if (user.totp_enabled) {
+      return { twoFactorRequired: true as const, tempToken: signPendingTwoFactorToken(user.id) };
+    }
 
-    const refreshToken = crypto.randomBytes(48).toString('hex');
-    const expiresAt = new Date(Date.now() + env.jwtRefreshExpiresInDays * 24 * 60 * 60 * 1000);
-    await RefreshTokenModel.create(user.id, hashToken(refreshToken), expiresAt, userAgent);
+    return { twoFactorRequired: false as const, ...(await issueSession(user, userAgent)) };
+  },
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.global_role,
-        must_change_password: user.must_change_password,
-      },
-    };
+  async verifyTwoFactorLogin(tempToken: string, code: string, userAgent?: string) {
+    let payload;
+    try {
+      payload = verifyPendingTwoFactorToken(tempToken);
+    } catch {
+      throw AppError.unauthorized('Sessão de login expirada, faça login novamente');
+    }
+
+    const user = await UserModel.findById(payload.sub);
+    if (!user || !user.active || !user.totp_enabled || !user.totp_secret_encrypted) {
+      throw AppError.unauthorized();
+    }
+
+    const secret = TotpService.decryptSecret(user.totp_secret_encrypted);
+    if (!TotpService.verify(code, secret)) {
+      throw new AppError('Código inválido', 400);
+    }
+
+    return issueSession(user, userAgent);
+  },
+
+  async setupTwoFactor(userId: number) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw AppError.notFound();
+    }
+
+    const secret = TotpService.generateSecret();
+    await UserModel.setPendingTotpSecret(userId, TotpService.encryptSecret(secret));
+
+    const otpauthUrl = TotpService.buildOtpauthUrl(user.email, secret);
+    const qrCodeDataUrl = await TotpService.buildQrCodeDataUrl(otpauthUrl);
+    return { secret, qrCodeDataUrl };
+  },
+
+  async confirmTwoFactor(userId: number, code: string) {
+    const user = await UserModel.findById(userId);
+    if (!user || !user.totp_secret_encrypted) {
+      throw new AppError('Gere um código de configuração antes de confirmar', 400);
+    }
+
+    const secret = TotpService.decryptSecret(user.totp_secret_encrypted);
+    if (!TotpService.verify(code, secret)) {
+      throw new AppError('Código inválido', 400);
+    }
+
+    await UserModel.confirmTotp(userId);
+  },
+
+  async disableTwoFactor(userId: number, password: string) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw AppError.notFound();
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      throw new AppError('Senha incorreta', 400);
+    }
+
+    await UserModel.disableTotp(userId);
   },
 
   async refresh(refreshToken: string, userAgent?: string) {
