@@ -124,20 +124,17 @@ export const DatabaseService = {
     if (!database) {
       throw AppError.notFound('Database não encontrado');
     }
-    const [records, fields] = await Promise.all([
+    const [records, fields, valueRows] = await Promise.all([
       DatabaseRecordModel.listByDatabase(databaseId),
       DatabaseFieldModel.listByDatabase(databaseId),
+      DatabaseRecordFieldValueModel.listByDatabaseRecords(databaseId),
     ]);
     const valuesByRecord = new Map<number, { fieldId: number; value: unknown }[]>();
-    await Promise.all(
-      records.map(async (record) => {
-        const values = await DatabaseRecordFieldValueModel.listByRecord(record.id);
-        valuesByRecord.set(
-          record.id,
-          values.map((v) => ({ fieldId: v.database_field_id, value: v.value }))
-        );
-      })
-    );
+    for (const v of valueRows) {
+      const list = valuesByRecord.get(v.record_id) ?? [];
+      list.push({ fieldId: v.database_field_id, value: v.value });
+      valuesByRecord.set(v.record_id, list);
+    }
     return {
       fields,
       records: records.map((record) => ({ ...record, fieldValues: valuesByRecord.get(record.id) ?? [] })),

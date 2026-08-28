@@ -225,13 +225,14 @@ async function runFieldAutomations(pipelineId: number, cardId: number, userId: n
 
 export const CardService = {
   async listByPipeline(pipelineId: number, userId: number) {
-    const [cards, labelRows, assigneeRows, checklistRows, actorRole, allFields] = await Promise.all([
+    const [cards, labelRows, assigneeRows, checklistRows, actorRole, allFields, fieldValueRows] = await Promise.all([
       CardModel.listByPipeline(pipelineId),
       LabelModel.listByPipelineCards(pipelineId),
       CardAssigneeModel.listByPipelineCards(pipelineId),
       ChecklistItemModel.countsByPipelineCards(pipelineId),
       resolveActorRole(pipelineId, userId),
       CustomFieldModel.listByPipeline(pipelineId),
+      CardFieldValueModel.listByPipelineCards(pipelineId),
     ]);
     const visibleFieldIds = new Set(
       allFields.filter((f) => roleAtLeast(actorRole, f.min_view_role ?? 'viewer')).map((f) => f.id)
@@ -252,15 +253,20 @@ export const CardService = {
       list.push({ user_id: row.user_id, name: row.name });
       assigneesByCard.set(row.card_id, list);
     }
-    return Promise.all(
-      cards.map(async (card) => ({
-        ...card,
-        fieldValues: (await CardFieldValueModel.listByCard(card.id)).filter((v) => visibleFieldIds.has(v.custom_field_id)),
-        labels: labelsByCard.get(card.id) ?? [],
-        assignees: assigneesByCard.get(card.id) ?? [],
-        checklistSummary: checklistByCard.get(card.id) ?? { total: 0, done: 0 },
-      }))
-    );
+    const fieldValuesByCard = new Map<number, typeof fieldValueRows>();
+    for (const value of fieldValueRows) {
+      if (!visibleFieldIds.has(value.custom_field_id)) continue;
+      const list = fieldValuesByCard.get(value.card_id) ?? [];
+      list.push(value);
+      fieldValuesByCard.set(value.card_id, list);
+    }
+    return cards.map((card) => ({
+      ...card,
+      fieldValues: fieldValuesByCard.get(card.id) ?? [],
+      labels: labelsByCard.get(card.id) ?? [],
+      assignees: assigneesByCard.get(card.id) ?? [],
+      checklistSummary: checklistByCard.get(card.id) ?? { total: 0, done: 0 },
+    }));
   },
 
   async getDetail(cardId: number, pipelineId: number, userId: number) {

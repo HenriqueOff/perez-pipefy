@@ -45,20 +45,26 @@ export const PipelineService = {
     if (!pipeline) {
       throw AppError.notFound('Pipeline não encontrado');
     }
-    const [phases, members, actorRole] = await Promise.all([
+    const [phases, members, actorRole, allCustomFields] = await Promise.all([
       PhaseModel.listByPipeline(pipelineId),
       PipelineModel.listMembers(pipelineId),
       resolveActorRole(pipelineId, userId),
+      // Uma consulta só para os campos de todas as fases (já vem ordenada por
+      // phase_id, position), no lugar de um listByPhase por fase.
+      CustomFieldModel.listByPipeline(pipelineId),
     ]);
 
-    const phasesWithFields = await Promise.all(
-      phases.map(async (phase) => ({
-        ...phase,
-        customFields: (await CustomFieldModel.listByPhase(phase.id)).filter((f) =>
-          roleAtLeast(actorRole, f.min_view_role ?? 'viewer')
-        ),
-      }))
-    );
+    const fieldsByPhase = new Map<number, typeof allCustomFields>();
+    for (const field of allCustomFields) {
+      if (!roleAtLeast(actorRole, field.min_view_role ?? 'viewer')) continue;
+      const list = fieldsByPhase.get(field.phase_id) ?? [];
+      list.push(field);
+      fieldsByPhase.set(field.phase_id, list);
+    }
+    const phasesWithFields = phases.map((phase) => ({
+      ...phase,
+      customFields: fieldsByPhase.get(phase.id) ?? [],
+    }));
 
     return { ...pipeline, phases: phasesWithFields, members };
   },
