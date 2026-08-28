@@ -9,7 +9,7 @@ function escapeCsvCell(value: string): string {
 
 export function downloadCsv(filename: string, headers: string[], rows: string[][]) {
   const lines = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(','));
-  // BOM (﻿) faz o Excel abrir acentos/UTF-8 corretamente em vez de interpretar como Latin-1.
+  // BOM (U+FEFF) faz o Excel abrir acentos/UTF-8 corretamente em vez de interpretar como Latin-1.
   const csvContent = '﻿' + lines.join('\r\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

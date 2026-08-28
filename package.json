@@ -2,6 +2,9 @@
   "name": "perez-filho-pipelines",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "backend",
     "frontend",
