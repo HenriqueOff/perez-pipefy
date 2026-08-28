@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
 import { env } from './config/env';
+import { db } from './config/db';
 import { logger } from './utils/logger';
 import { errorHandler } from './middlewares/errorHandler';
 import routes from './routes';
@@ -17,7 +18,17 @@ export function createApp() {
   app.use(cookieParser());
   app.use(pinoHttp({ logger }));
 
-  app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+  // Toca o banco de verdade: um `select 1`. Sem isso, o /health respondia "ok" mesmo com
+  // o Postgres fora, e um monitor externo não detectava a queda.
+  app.get('/health', async (_req, res) => {
+    try {
+      await db.raw('select 1');
+      res.json({ status: 'ok' });
+    } catch (err) {
+      logger.error({ err }, 'Health check falhou: banco inacessível');
+      res.status(503).json({ status: 'degraded', db: 'down' });
+    }
+  });
 
   app.use('/api/v1', routes);
 
