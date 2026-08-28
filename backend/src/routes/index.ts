@@ -7,6 +7,7 @@ import integrationRoutes from './integration.routes';
 import searchRoutes from './search.routes';
 import notificationRoutes from './notification.routes';
 import publicFormRoutes from './publicForm.routes';
+import internalRoutes from './internal.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/integrations', integrationRoutes);
 router.use('/search', searchRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/public/forms', publicFormRoutes);
+router.use('/internal', internalRoutes);
 
 export default router;

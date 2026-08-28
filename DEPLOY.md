@@ -45,3 +45,32 @@ o resto (código) já está pronto no repositório.
 - Qualquer `git push` na branch principal reimplanta backend e frontend automaticamente.
 - O backend do plano gratuito "dorme" depois de ~15 min sem acesso — a primeira requisição do dia demora uns 30-50s pra acordar. Normal.
 - O ambiente local com Docker continua funcionando do mesmo jeito para desenvolvimento — nada obriga a abandoná-lo, ele só deixa de ser onde os dados "de verdade" moram.
+
+## Tarefas em segundo plano (SLA e automações recorrentes)
+
+O sistema precisa varrer, de tempos em tempos, os cards para: notificar SLA
+estourado e disparar automações do tipo "atividade recorrente".
+
+**Como funciona hoje (padrão):** um `setInterval` de 15 min dentro do próprio
+processo do backend (`BACKGROUND_SCANS=interval`). Um advisory lock do Postgres
+garante que, se um dia rodar em mais de uma instância, só uma varre por vez.
+
+**Limitação:** no plano gratuito do Render o backend dorme; se ninguém acessar
+por 15+ min, o intervalo não fecha e a varredura não roda até alguém acordar o
+serviço.
+
+**Opcional — cron externo (recomendado se o SLA importa):**
+
+1. No `pipelines-backend` → Environment, defina:
+   - `BACKGROUND_SCANS=off`
+   - `INTERNAL_API_SECRET=<uma string aleatória longa>`
+2. Configure um agendador externo (Render Cron Job, cron-job.org, GitHub
+   Actions schedule...) para, a cada 10–15 min, fazer:
+
+   ```
+   POST https://<pipelines-backend>/api/v1/internal/run-scans
+   Header: X-Internal-Secret: <o mesmo INTERNAL_API_SECRET>
+   ```
+
+   Resposta `{ "ok": true, "ran": true }`. Sem o segredo configurado, o
+   endpoint responde 404.

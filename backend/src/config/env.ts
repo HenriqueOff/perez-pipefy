@@ -39,4 +39,12 @@ export const env = {
   // URL do frontend usada pra montar o link de redefinição de senha. Sem FRONTEND_URL
   // definida, reaproveita o CORS_ORIGIN (na prática sempre a mesma URL nesta app).
   frontendUrl: process.env.FRONTEND_URL ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  // Scans periódicos (SLA das fases + automações recorrentes):
+  //   'interval' (padrão) — setInterval dentro do processo do backend;
+  //   'off'               — não roda in-process (use quando um cron externo bate em
+  //                         POST /api/v1/internal/run-scans).
+  backgroundScans: (process.env.BACKGROUND_SCANS ?? 'interval') as 'interval' | 'off',
+  // Segredo compartilhado para POST /api/v1/internal/run-scans (cabeçalho
+  // X-Internal-Secret). Sem isto definido, o endpoint interno responde 404.
+  internalApiSecret: process.env.INTERNAL_API_SECRET,
 };
