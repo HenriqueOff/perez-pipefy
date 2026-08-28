@@ -12,7 +12,7 @@ export const UserController = {
   },
 
   async update(req: Request, res: Response) {
-    const user = await UserService.update(Number(req.params.userId), req.body);
+    const user = await UserService.update(Number(req.params.userId), req.body, req.user!.id);
     res.json(user);
   },
 };

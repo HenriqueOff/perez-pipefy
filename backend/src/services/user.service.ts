@@ -33,11 +33,32 @@ export const UserService = {
     return sanitize(user);
   },
 
-  async update(id: number, changes: { name?: string; email?: string; global_role?: GlobalRole; active?: boolean }) {
+  async update(
+    id: number,
+    changes: { name?: string; email?: string; global_role?: GlobalRole; active?: boolean },
+    actingUserId?: number
+  ) {
     const user = await UserModel.findById(id);
     if (!user) {
       throw AppError.notFound('Usuário não encontrado');
     }
+
+    const demotesFromAdmin =
+      user.global_role === 'admin' && changes.global_role !== undefined && changes.global_role !== 'admin';
+    const deactivates = user.active && changes.active === false;
+
+    // Um admin não pode se rebaixar nem desativar a própria conta (footgun clássico de
+    // travar o próprio acesso); use outra conta admin pra isso.
+    if (actingUserId === id && (demotesFromAdmin || deactivates)) {
+      throw AppError.forbidden('Você não pode alterar o próprio papel nem desativar a própria conta');
+    }
+
+    // Nunca deixar o sistema sem nenhum administrador ativo.
+    if ((demotesFromAdmin || (deactivates && user.global_role === 'admin')) &&
+        (await UserModel.countActiveAdminsExcept(id)) === 0) {
+      throw new AppError('Não é possível remover o último administrador ativo do sistema', 409);
+    }
+
     if (changes.email && changes.email !== user.email) {
       const existing = await UserModel.findByEmail(changes.email);
       if (existing) {

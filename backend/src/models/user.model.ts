@@ -32,6 +32,15 @@ export const UserModel = {
     return db<UserRow>(TABLE).where({ active: true }).select('id', 'name', 'email').orderBy('name');
   },
 
+  countActiveAdminsExcept(id: number) {
+    return db<UserRow>(TABLE)
+      .where({ global_role: 'admin', active: true })
+      .whereNot({ id })
+      .count<{ count: string }[]>('id as count')
+      .first()
+      .then((row) => Number(row?.count ?? 0));
+  },
+
   create(input: CreateUserInput) {
     return db<UserRow>(TABLE)
       .insert({ ...input, global_role: input.global_role ?? 'member' })
