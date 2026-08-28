@@ -4,7 +4,11 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: '.',
   testMatch: ['<rootDir>/tests/**/*.test.ts'],
-  setupFiles: ['dotenv/config'],
+  // Cria (se preciso) e migra um Postgres local descartável (pipelines_test) antes da suíte.
+  globalSetup: '<rootDir>/tests/globalSetup.js',
+  // Carrega backend/.env.test em vez do backend/.env real (que aponta para produção) e
+  // recusa rodar se o ambiente parecer de produção — ver tests/assertTestEnv.ts.
+  setupFiles: ['<rootDir>/tests/loadEnv.ts'],
   // Sem isso, o ts-jest não entende corretamente o "module": "node16" do tsconfig ao
   // tipar import() dinâmico de pacotes ESM-only (file-type, sanitize-html) — cada arquivo
   // é transpilado isoladamente, sem checagem de tipo cross-file (tsc --noEmit já cobre
