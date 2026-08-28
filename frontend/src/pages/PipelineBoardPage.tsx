@@ -5,6 +5,7 @@ import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '
 import { PipelinesApi } from '../api/pipelines';
 import { Card, Phase, PipelineRole } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import KanbanColumn from '../components/KanbanColumn';
 import CardDetailModal from '../components/CardDetailModal';
 import PipelineMembersModal from '../components/PipelineMembersModal';
@@ -24,6 +25,7 @@ export default function PipelineBoardPage() {
   const id = Number(pipelineId);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: pipeline } = useQuery({ queryKey: ['pipeline', id], queryFn: () => PipelinesApi.detail(id) });
@@ -89,7 +91,7 @@ export default function PipelineBoardPage() {
     onSuccess: invalidate,
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      alert(message ?? 'Não foi possível mover o card');
+      toast(message ?? 'Não foi possível mover o card', 'error');
       invalidate();
     },
   });
@@ -101,7 +103,7 @@ export default function PipelineBoardPage() {
         PipelinesApi.updatePhase(id, b.id, { position: a.position }),
       ]),
     onSuccess: invalidate,
-    onError: () => alert('Não foi possível reordenar as fases'),
+    onError: () => toast('Não foi possível reordenar as fases', 'error'),
   });
 
   function handleMovePhase(index: number, direction: -1 | 1) {

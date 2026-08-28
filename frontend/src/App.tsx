@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminIntegrationsPage from './pages/AdminIntegrationsPage';
 import PublicFormPage from './pages/PublicFormPage';
+import NotFoundPage from './pages/NotFoundPage';
 import Layout from './components/Layout';
 import ForcePasswordChangeGate from './components/ForcePasswordChangeGate';
 
@@ -62,6 +63,7 @@ export default function App() {
             </AdminRoute>
           }
         />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

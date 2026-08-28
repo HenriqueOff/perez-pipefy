@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import { CardAssignee, PipelineMember } from '../types';
+import { useToast } from '../context/ToastContext';
 import Avatar from './Avatar';
 import Icon from './Icon';
 
@@ -18,6 +19,7 @@ export default function CardAssignees({
   canEdit: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['cards', pipelineId] });
@@ -27,13 +29,13 @@ export default function CardAssignees({
   const addMutation = useMutation({
     mutationFn: (userId: number) => PipelinesApi.addAssignee(pipelineId, cardId, userId),
     onSuccess: invalidate,
-    onError: () => alert('Não foi possível adicionar o responsável'),
+    onError: () => toast('Não foi possível adicionar o responsável', 'error'),
   });
 
   const removeMutation = useMutation({
     mutationFn: (userId: number) => PipelinesApi.removeAssignee(pipelineId, cardId, userId),
     onSuccess: invalidate,
-    onError: () => alert('Não foi possível remover o responsável'),
+    onError: () => toast('Não foi possível remover o responsável', 'error'),
   });
 
   const currentIds = new Set(currentAssignees.map((a) => a.user_id));

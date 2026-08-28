@@ -5,6 +5,7 @@ import { openHtmlDocument } from '../utils/openHtmlDocument';
 import { buildWhatsAppLink } from '../utils/whatsapp';
 import { DatabasesApi } from '../api/databases';
 import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
+import { useToast } from '../context/ToastContext';
 import { roleAtLeast } from '../utils/roles';
 import AttachmentList from './AttachmentList';
 import CardLabels from './CardLabels';
@@ -26,6 +27,7 @@ interface Props {
 
 export default function CardDetailModal({ pipelineId, cardId, phases, members, canEdit, userRole, onClose }: Props) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: card } = useQuery({
     queryKey: ['card', pipelineId, cardId],
     queryFn: () => PipelinesApi.cardDetail(pipelineId, cardId),
@@ -68,7 +70,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
     onSuccess: invalidateBoard,
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      alert(message ?? 'Não foi possível mover o card');
+      toast(message ?? 'Não foi possível mover o card', 'error');
     },
   });
 
@@ -77,7 +79,7 @@ export default function CardDetailModal({ pipelineId, cardId, phases, members, c
     onSuccess: invalidateBoard,
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      alert(message ?? 'Não foi possível alterar o prazo');
+      toast(message ?? 'Não foi possível alterar o prazo', 'error');
     },
   });
 
