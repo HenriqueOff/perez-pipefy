@@ -177,12 +177,12 @@ export const AuthService = {
 
   async requestPasswordReset(email: string) {
     const user = await UserModel.findByEmail(email);
-    // Deploy intranet, só para a equipe: ao contrário do padrão usual (não revelar se o
-    // e-mail existe, pra evitar enumeração de usuários por um atacante externo), aqui
-    // preferimos avisar quando o e-mail não está cadastrado — o custo de enumeração é
-    // baixo (usuários já se conhecem) e o ganho de clareza pra quem errou o e-mail é maior.
+    // Não revela se o e-mail existe ou não: a resposta é sempre "sucesso" pra quem chama,
+    // mesmo em outro texto o frontend não deve distinguir os dois casos (ver
+    // ForgotPasswordPage.tsx) — evita que alguém use este formulário pra descobrir quais
+    // e-mails têm conta no sistema.
     if (!user || !user.active) {
-      throw AppError.notFound('Não existe usuário cadastrado com esse e-mail');
+      return;
     }
 
     await PasswordResetTokenModel.invalidateAllForUser(user.id);

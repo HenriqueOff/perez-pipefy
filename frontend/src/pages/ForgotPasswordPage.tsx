@@ -30,7 +30,10 @@ export default function ForgotPasswordPage() {
         <h1>Esqueceu a senha?</h1>
         <p className="subtitle">Informe seu e-mail e enviaremos um link pra redefinir a senha.</p>
         {sent ? (
-          <p className="success">Você vai receber um link de redefinição em instantes.</p>
+          <p className="success">
+            Se o e-mail estiver cadastrado, você vai receber um link de redefinição em instantes. Confira se
+            digitou o e-mail corretamente e tente novamente caso não receba nada.
+          </p>
         ) : (
           <>
             <label>
