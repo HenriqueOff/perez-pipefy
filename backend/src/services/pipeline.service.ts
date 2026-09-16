@@ -20,8 +20,8 @@ export const PipelineService = {
     return PipelineModel.listForUser(userId);
   },
 
-  async getOverviewForUser(userId: number) {
-    const pipelines = await PipelineModel.listForUser(userId);
+  async getOverviewForUser(userId: number, opts?: { archived?: boolean }) {
+    const pipelines = await PipelineModel.listForUser(userId, opts);
     const pipelineIds = pipelines.map((p) => p.id);
 
     const [stats, recentActivity] = await Promise.all([

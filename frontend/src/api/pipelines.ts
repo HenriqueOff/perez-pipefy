@@ -34,7 +34,8 @@ import {
 
 export const PipelinesApi = {
   list: () => api.get<Pipeline[]>('/pipelines').then((r) => r.data),
-  overview: () => api.get<PipelinesOverview>('/pipelines/overview').then((r) => r.data),
+  overview: (params?: { archived?: boolean }) =>
+    api.get<PipelinesOverview>('/pipelines/overview', { params }).then((r) => r.data),
   systemActivity: (params?: { limit?: number; offset?: number }) =>
     api.get<RecentActivityItem[]>('/pipelines/system-activity', { params }).then((r) => r.data),
   listTemplates: () => api.get<{ key: string; label: string }[]>('/pipelines/templates').then((r) => r.data),

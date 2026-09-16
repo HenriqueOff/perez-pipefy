@@ -35,9 +35,9 @@ export const PipelineModel = {
   // foi de fato adicionado como membro, mesmo pra admin global — admin ainda consegue
   // gerenciar qualquer pipeline diretamente pelo ID (requirePipelineRole sempre deixa
   // passar), só não aparece na lista dele por padrão.
-  listForUser(userId: number) {
+  listForUser(userId: number, opts?: { archived?: boolean }) {
     return db<PipelineRow>(TABLE)
-      .where({ archived: false })
+      .where({ archived: opts?.archived ?? false })
       .whereIn('id', db(MEMBERS_TABLE).select('pipeline_id').where({ user_id: userId }))
       .select(...SAFE_COLUMNS)
       .orderBy('name');

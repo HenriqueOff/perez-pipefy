@@ -11,7 +11,7 @@ export const PipelineController = {
   },
 
   async overview(req: Request, res: Response) {
-    const overview = await PipelineService.getOverviewForUser(req.user!.id);
+    const overview = await PipelineService.getOverviewForUser(req.user!.id, { archived: req.query.archived === 'true' });
     res.json(overview);
   },
 

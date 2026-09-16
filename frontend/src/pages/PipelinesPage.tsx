@@ -137,12 +137,17 @@ export default function PipelinesPage() {
 
 function PipelinesTab() {
   const queryClient = useQueryClient();
+  const [query, setQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const {
     data: overview,
     isLoading,
     isError,
     refetch,
-  } = useQuery({ queryKey: ['pipelines-overview'], queryFn: PipelinesApi.overview });
+  } = useQuery({
+    queryKey: ['pipelines-overview', showArchived],
+    queryFn: () => PipelinesApi.overview({ archived: showArchived }),
+  });
   const [name, setName] = useState('');
   const [template, setTemplate] = useState('');
   const [creating, setCreating] = useState(false);
@@ -170,10 +175,26 @@ function PipelinesTab() {
     createMutation.mutate({ name: name.trim(), template: template || undefined });
   }
 
-  const pipelines: PipelineOverviewItem[] = overview?.pipelines ?? [];
+  const allPipelines: PipelineOverviewItem[] = overview?.pipelines ?? [];
+  const term = query.trim().toLowerCase();
+  const pipelines = term ? allPipelines.filter((p) => p.name.toLowerCase().includes(term)) : allPipelines;
 
   return (
     <>
+      <div className="table-filters-bar">
+        <input
+          type="search"
+          placeholder="Buscar pipeline pelo nome..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="card-filter-text"
+        />
+        <label className="checkbox-label">
+          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+          Mostrar arquivados
+        </label>
+      </div>
+
       {creating && (
         <form className="inline-form" onSubmit={handleCreate}>
           <input
@@ -245,8 +266,15 @@ function PipelinesTab() {
             </Link>
           );
         })}
-        {!isLoading && !isError && pipelines.length === 0 && (
-          <p>Nenhum pipeline ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.</p>
+        {!isLoading && !isError && pipelines.length === 0 && allPipelines.length > 0 && (
+          <p>Nenhum pipeline com esse nome.</p>
+        )}
+        {!isLoading && !isError && allPipelines.length === 0 && (
+          <p>
+            {showArchived
+              ? 'Nenhum pipeline arquivado.'
+              : 'Nenhum pipeline ainda — peça pra um dono/gerente te adicionar, ou crie o primeiro acima.'}
+          </p>
         )}
       </div>
     </>
