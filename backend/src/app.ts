@@ -23,7 +23,22 @@ const FRONTEND_DIST_PATH = process.env.FRONTEND_DIST_PATH ?? path.resolve(proces
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  // Config padrão do helmet presume HTTPS: "upgrade-insecure-requests" na CSP faz o
+  // navegador tentar recarregar todo recurso (JS/CSS do build) em https://, e HSTS
+  // instrui o navegador a só falar HTTPS com este host daqui pra frente. A intranet
+  // roda em HTTP puro (LAN, sem TLS) — com os dois ligados, o navegador tenta buscar
+  // os assets em HTTPS, que não existe aqui, e a página fica em branco (só o HTML cru
+  // chega, sem script/CSS). Mesma causa raiz do bug do cookie "secure" já corrigido em
+  // auth.controller.ts.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: { upgradeInsecureRequests: null },
+      },
+      hsts: false,
+    })
+  );
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
