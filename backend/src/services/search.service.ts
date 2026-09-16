@@ -5,12 +5,30 @@ export const SearchService = {
   async searchCards(userId: number, isAdmin: boolean, query: string) {
     const term = query.trim();
     if (term.length < 2) return [];
+    const like = `%${term}%`;
 
     let builder = db('cards')
       .join('pipelines', 'pipelines.id', 'cards.pipeline_id')
       .join('phases', 'phases.id', 'cards.current_phase_id')
       .where('pipelines.archived', false)
-      .andWhere('cards.title', 'ilike', `%${term}%`)
+      .andWhere((qb) => {
+        qb.where('cards.title', 'ilike', like)
+          // Só campos sem restrição de papel (min_view_role) entram na busca — mesma regra
+          // usada no formulário público (publicForm.service.ts): qualquer restrição já
+          // conta como "isso é interno", então nem a existência do card deve vazar por um
+          // valor que a pessoa buscando não teria permissão de ver.
+          .orWhereExists(function () {
+            this.select(1)
+              .from('card_field_values')
+              .join('custom_fields', 'custom_fields.id', 'card_field_values.custom_field_id')
+              .whereRaw('card_field_values.card_id = cards.id')
+              .whereNull('custom_fields.min_view_role')
+              .andWhereRaw(`card_field_values.value #>> '{}' ilike ?`, [like]);
+          })
+          .orWhereExists(function () {
+            this.select(1).from('comments').whereRaw('comments.card_id = cards.id').andWhere('comments.body', 'ilike', like);
+          });
+      })
       .select(
         'cards.id as card_id',
         'cards.title',

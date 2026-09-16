@@ -54,7 +54,7 @@ export default function GlobalSearch() {
     <div className="global-search" ref={containerRef}>
       <input
         type="search"
-        placeholder="Buscar cards..."
+        placeholder="Buscar por título, campo ou comentário..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => (results.length > 0 || recentSearches.length > 0) && setOpen(true)}
