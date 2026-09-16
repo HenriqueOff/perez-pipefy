@@ -1,21 +1,55 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: pipelines-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: pipelines
-      POSTGRES_PASSWORD: pipelines
-      POSTGRES_DB: pipelines
+      POSTGRES_USER: ${POSTGRES_USER:-pipelines}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-pipelines}
+    # Só localhost — nada na LAN deve alcançar o Postgres direto (ver achado
+    # crítico #2 do RELATORIO_SEGURANCA.md da pasta Projetos, sobre o mesmo erro
+    # no MySQL do site/).
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   adminer:
     image: adminer
+    container_name: pipelines-adminer
     restart: unless-stopped
+    # Também só localhost — é uma ferramenta de inspeção de banco, não precisa
+    # (e não deve) ficar acessível pra qualquer um na LAN.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+
+  pipelines:
+    build: .
+    container_name: pipelines
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    # Porta 3008 — 3000 a 3007 já estão em uso por outros containers nesta
+    # máquina (ver `docker ps` / portal/projetos.json). O portal (192.168.0.169)
+    # linka direto pra cá, sem proxy, igual às outras ferramentas.
+    ports:
+      - "3008:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-pipelines}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pipelines}
+      DATABASE_SSL: "false"
+      # Anexos em disco local (volume abaixo) — sem depender do Supabase, que só
+      # faz sentido pro deploy em nuvem descrito em DEPLOY.md.
+      STORAGE_DRIVER: local
+      CORS_ORIGIN: http://192.168.0.169:3008
+      COOKIE_CROSS_SITE: "false"
+      BACKGROUND_SCANS: interval
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
 
 volumes:
   postgres_data:

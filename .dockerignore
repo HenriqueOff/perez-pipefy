@@ -1,0 +1,13 @@
+node_modules
+backend/node_modules
+frontend/node_modules
+backend/dist
+frontend/dist
+backend/uploads
+backend/coverage
+.git
+.github
+*.log
+# Config específica de Windows (ver comentário no .gitignore) — script-shell
+# apontando pro PowerShell quebra o "npm run build" dentro do container Linux.
+.npmrc
