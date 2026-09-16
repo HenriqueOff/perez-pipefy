@@ -1412,6 +1412,16 @@ textarea:focus {
   border-color: #25d366;
 }
 
+/* Fora da tela (não display:none/visibility:hidden — alguns bots ignoram só isso), sem
+   ficar na ordem de tab nem ser lido por leitor de tela. */
+.honeypot-field {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  left: -9999px;
+}
+
 .currency-field-row {
   display: flex;
   gap: 6px;
@@ -2087,6 +2097,10 @@ button svg {
 
 .automation-row-inactive {
   opacity: 0.55;
+}
+
+.automation-run-error {
+  background: var(--color-danger-soft);
 }
 
 .automation-info {

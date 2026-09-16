@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { PublicFormApi } from '../api/publicForm';
+import { maskCpfCnpj } from '../utils/documentFormat';
 
 export default function PublicFormPage() {
   const { token } = useParams();
@@ -20,9 +21,13 @@ export default function PublicFormPage() {
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Honeypot: campo real pra bot nenhum ver (escondido fora da tela + tabIndex -1 +
+  // aria-hidden, pra não atrapalhar leitor de tela nem navegação por teclado de gente de
+  // verdade). Ver backend/src/validators/publicForm.schema.ts.
+  const [honeypot, setHoneypot] = useState('');
 
   const submitMutation = useMutation({
-    mutationFn: () => PublicFormApi.submit(token!, { title: title.trim(), fields: fieldValues }),
+    mutationFn: () => PublicFormApi.submit(token!, { title: title.trim(), fields: fieldValues, website: honeypot }),
     onSuccess: () => {
       setError(null);
       setDone(true);
@@ -84,6 +89,20 @@ export default function PublicFormPage() {
 
         {error && <p className="error">{error}</p>}
 
+        {/* Honeypot: invisível e fora da navegação por teclado pra gente de verdade, mas um
+            bot que preenche todo <input> do formulário cai aqui. */}
+        <label className="honeypot-field" aria-hidden="true">
+          Site
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </label>
+
         <label>
           Título
           <input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
@@ -127,6 +146,23 @@ export default function PublicFormPage() {
                 type="date"
                 value={String(fieldValues[field.key] ?? '')}
                 onChange={(e) => setField(field.key, e.target.value)}
+              />
+            ) : field.type === 'currency' ? (
+              <div className="currency-field-row">
+                <span className="currency-prefix">R$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={fieldValues[field.key] === undefined ? '' : String(fieldValues[field.key])}
+                  onChange={(e) => setField(field.key, e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              </div>
+            ) : field.type === 'cpf_cnpj' ? (
+              <input
+                value={String(fieldValues[field.key] ?? '')}
+                onChange={(e) => setField(field.key, maskCpfCnpj(e.target.value))}
+                placeholder="CPF ou CNPJ"
+                inputMode="numeric"
               />
             ) : (
               <input

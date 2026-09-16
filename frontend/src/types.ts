@@ -397,6 +397,17 @@ export interface Automation {
   active: boolean;
 }
 
+export interface AutomationRun {
+  id: number;
+  automation_id: number;
+  automation_name: string;
+  card_id: number | null;
+  card_title: string | null;
+  status: 'success' | 'error';
+  error_message: string | null;
+  created_at: string;
+}
+
 export type NotificationType = 'card_assigned' | 'comment_added' | 'card_moved' | 'sla_breached' | 'mentioned';
 
 export interface AppNotification {

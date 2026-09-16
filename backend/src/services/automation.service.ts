@@ -4,6 +4,7 @@ import https from 'https';
 import { db } from '../config/db';
 import { AutomationModel } from '../models/automation.model';
 import { AutomationRecurrenceModel } from '../models/automationRecurrence.model';
+import { AutomationRunModel } from '../models/automationRun.model';
 import { CardModel } from '../models/card.model';
 import { CardAssigneeModel } from '../models/cardAssignee.model';
 import { CardConnectionModel } from '../models/cardConnection.model';
@@ -629,9 +630,36 @@ async function runAction(
   }
 }
 
+/**
+ * Mesma execução de runAction, só que gravando o resultado (sucesso ou erro) em
+ * automation_runs — os 3 disparadores de automação (runTriggers, scanRecurringAutomations
+ * e o "todos os cards conectados numa fase" mais abaixo) passam por aqui em vez de chamar
+ * runAction direto, pra nenhum ponto de disparo esquecer de registrar o histórico.
+ */
+async function runActionLogged(
+  automation: { id: number; action_type: string; action_config: Record<string, unknown> | null },
+  cardId: number,
+  actingUserId: number | null
+) {
+  try {
+    await runAction(automation, cardId, actingUserId);
+    await AutomationRunModel.record({ automation_id: automation.id, card_id: cardId, status: 'success' }).catch(() => undefined);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await AutomationRunModel.record({ automation_id: automation.id, card_id: cardId, status: 'error', error_message: message }).catch(
+      () => undefined
+    );
+    throw err;
+  }
+}
+
 export const AutomationService = {
   listByPipeline(pipelineId: number) {
     return AutomationModel.listByPipeline(pipelineId);
+  },
+
+  listRuns(pipelineId: number) {
+    return AutomationRunModel.listByPipeline(pipelineId);
   },
 
   async create(
@@ -710,7 +738,7 @@ export const AutomationService = {
     for (const automation of automations) {
       if (!matchesTrigger(automation.trigger_config, context)) continue;
       try {
-        await runAction(automation, context.cardId, actingUserId);
+        await runActionLogged(automation, context.cardId, actingUserId);
       } catch (err) {
         logger.error({ err, automationId: automation.id }, 'Falha ao executar automação');
       }
@@ -754,7 +782,7 @@ export const AutomationService = {
           if (elapsedHours < intervalHours) continue;
 
           try {
-            await runAction(automation, card.id, null);
+            await runActionLogged(automation, card.id, null);
           } catch (err) {
             logger.error({ err, automationId: automation.id, cardId: card.id }, 'Falha ao executar automação recorrente');
           }
@@ -816,7 +844,7 @@ export const AutomationService = {
         if (!allInPhase) continue;
 
         try {
-          await runAction(automation, targetCardId, actingUserId);
+          await runActionLogged(automation, targetCardId, actingUserId);
         } catch (err) {
           logger.error({ err, automationId: automation.id }, 'Falha ao executar automação de cards conectados');
         }

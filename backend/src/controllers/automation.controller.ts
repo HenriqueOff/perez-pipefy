@@ -6,6 +6,10 @@ export const AutomationController = {
     res.json(await AutomationService.listByPipeline(Number(req.params.pipelineId)));
   },
 
+  async listRuns(req: Request, res: Response) {
+    res.json(await AutomationService.listRuns(Number(req.params.pipelineId)));
+  },
+
   async create(req: Request, res: Response) {
     const automation = await AutomationService.create(Number(req.params.pipelineId), req.body);
     res.status(201).json(automation);

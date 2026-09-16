@@ -58,6 +58,7 @@ export default function AutomationsModal({ pipelineId, pipeline, canManage, onCl
 
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showRuns, setShowRuns] = useState(false);
   const [showContractTemplates, setShowContractTemplates] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -217,9 +218,13 @@ export default function AutomationsModal({ pipelineId, pipeline, canManage, onCl
                 >
                   {showContractTemplates ? 'Fechar modelos de contrato' : 'Modelos de contrato'}
                 </button>
+                <button type="button" className="secondary-button" onClick={() => setShowRuns((v) => !v)}>
+                  {showRuns ? 'Fechar histórico' : 'Histórico de execuções'}
+                </button>
               </div>
               {showTemplates && <EmailTemplatesSection pipelineId={pipelineId} />}
               {showContractTemplates && <ContractTemplatesSection pipelineId={pipelineId} />}
+              {showRuns && <AutomationRunsSection pipelineId={pipelineId} />}
               {showForm && (
                 <AutomationForm
                   pipelineId={pipelineId}
@@ -239,6 +244,37 @@ export default function AutomationsModal({ pipelineId, pipeline, canManage, onCl
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AutomationRunsSection({ pipelineId }: { pipelineId: number }) {
+  const { data: runs, isLoading } = useQuery({
+    queryKey: ['automation-runs', pipelineId],
+    queryFn: () => PipelinesApi.listAutomationRuns(pipelineId),
+  });
+
+  return (
+    <div className="automation-runs-section">
+      <p className="muted">Últimas 50 execuções (sucesso ou erro) das automações deste pipeline.</p>
+      {isLoading && <p className="muted">Carregando...</p>}
+      {runs?.length === 0 && <p className="muted">Nenhuma automação rodou ainda.</p>}
+      <ul className="automation-list">
+        {runs?.map((run) => (
+          <li key={run.id} className={`automation-row ${run.status === 'error' ? 'automation-run-error' : ''}`}>
+            <div className="automation-info">
+              <span className="member-name">
+                {run.status === 'error' ? '✖' : '✓'} {run.automation_name}
+                {run.card_title ? ` — ${run.card_title}` : ''}
+              </span>
+              <span className="muted">
+                {new Date(run.created_at).toLocaleString('pt-BR')}
+                {run.error_message ? ` · ${run.error_message}` : ''}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -11,6 +11,7 @@ const router = Router({ mergeParams: true });
 // inteiro (mover card, disparar e-mail, criar card em outro pipe...), então saíram do
 // alcance de manager/owner e viraram, junto com campos customizados, decisão centralizada.
 router.get('/', requireGlobalRole('admin'), asyncHandler(AutomationController.list));
+router.get('/runs', requireGlobalRole('admin'), asyncHandler(AutomationController.listRuns));
 router.post(
   '/',
   requireGlobalRole('admin'),
