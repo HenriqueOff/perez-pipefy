@@ -16,8 +16,9 @@ export default function ForgotPasswordPage() {
     try {
       await api.post('/auth/forgot-password', { email });
       setSent(true);
-    } catch {
-      setError('Não foi possível enviar o e-mail. Tente novamente.');
+    } catch (err) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setError(message ?? 'Não foi possível enviar o e-mail. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -29,9 +30,7 @@ export default function ForgotPasswordPage() {
         <h1>Esqueceu a senha?</h1>
         <p className="subtitle">Informe seu e-mail e enviaremos um link pra redefinir a senha.</p>
         {sent ? (
-          <p className="success">
-            Se esse e-mail estiver cadastrado, você vai receber um link de redefinição em instantes.
-          </p>
+          <p className="success">Você vai receber um link de redefinição em instantes.</p>
         ) : (
           <>
             <label>
