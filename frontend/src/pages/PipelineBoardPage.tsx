@@ -17,8 +17,10 @@ import PublicFormModal from '../components/PublicFormModal';
 import PipelineAdminSettingsModal from '../components/PipelineAdminSettingsModal';
 import CardsTableView from '../components/CardsTableView';
 import DashboardView from '../components/DashboardView';
+import CardFilterBar from '../components/CardFilterBar';
 import Tooltip from '../components/Tooltip';
 import Icon from '../components/Icon';
+import { CardFilters, EMPTY_CARD_FILTERS, matchesCardFilters } from '../utils/cardFilters';
 
 export default function PipelineBoardPage() {
   const { pipelineId } = useParams();
@@ -30,6 +32,7 @@ export default function PipelineBoardPage() {
 
   const { data: pipeline } = useQuery({ queryKey: ['pipeline', id], queryFn: () => PipelinesApi.detail(id) });
   const { data: cards } = useQuery({ queryKey: ['cards', id], queryFn: () => PipelinesApi.listCards(id) });
+  const { data: labels } = useQuery({ queryKey: ['labels', id], queryFn: () => PipelinesApi.listLabels(id) });
 
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
 
@@ -52,6 +55,7 @@ export default function PipelineBoardPage() {
   const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'dashboard'>('kanban');
   const [settingsPhaseId, setSettingsPhaseId] = useState<number | null>(null);
+  const [filters, setFilters] = useState<CardFilters>(EMPTY_CARD_FILTERS);
 
   const currentMembership = pipeline?.members.find((m) => m.user_id === user?.id);
   const canManageMembers = user?.role === 'admin' || currentMembership?.pipeline_role === 'owner' || currentMembership?.pipeline_role === 'manager';
@@ -136,8 +140,15 @@ export default function PipelineBoardPage() {
 
   if (!pipeline || !cards) return <p>Carregando...</p>;
 
+  const phaseById = new Map(pipeline.phases.map((p) => [p.id, p]));
+  const filteredCards = cards.filter((card) => matchesCardFilters(card, filters, phaseById));
+
   const cardsByPhase = new Map<number, Card[]>();
+  const totalByPhase = new Map<number, number>();
   for (const card of cards) {
+    totalByPhase.set(card.current_phase_id, (totalByPhase.get(card.current_phase_id) ?? 0) + 1);
+  }
+  for (const card of filteredCards) {
     const list = cardsByPhase.get(card.current_phase_id) ?? [];
     list.push(card);
     cardsByPhase.set(card.current_phase_id, list);
@@ -217,6 +228,17 @@ export default function PipelineBoardPage() {
         </form>
       )}
 
+      {viewMode !== 'dashboard' && (
+        <CardFilterBar
+          storageKey={`card-filters-${id}`}
+          filters={filters}
+          onChange={setFilters}
+          labels={labels}
+          members={pipeline.members}
+          phases={viewMode === 'table' ? pipeline.phases : undefined}
+        />
+      )}
+
       {viewMode === 'dashboard' && <DashboardView pipelineId={id} />}
 
       {viewMode === 'table' && (
@@ -224,7 +246,7 @@ export default function PipelineBoardPage() {
           pipelineId={id}
           cards={cards}
           phases={pipeline.phases}
-          members={pipeline.members}
+          filters={filters}
           canEdit={canEdit}
           onCardClick={(card) => setSelectedCardId(card.id)}
         />
@@ -238,6 +260,7 @@ export default function PipelineBoardPage() {
               <KanbanColumn
                 phase={phase}
                 cards={cardsByPhase.get(phase.id) ?? []}
+                totalCount={totalByPhase.get(phase.id) ?? 0}
                 canEdit={canManagePhases}
                 canMoveLeft={index > 0}
                 canMoveRight={index < pipeline.phases.length - 1}

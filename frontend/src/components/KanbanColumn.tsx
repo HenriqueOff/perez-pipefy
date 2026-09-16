@@ -11,6 +11,7 @@ const DEFAULT_PHASE_COLOR = '#9CA3AF';
 export default function KanbanColumn({
   phase,
   cards,
+  totalCount,
   canEdit,
   canMoveLeft,
   canMoveRight,
@@ -21,6 +22,10 @@ export default function KanbanColumn({
 }: {
   phase: Phase;
   cards: Card[];
+  /** Total de cards na fase sem filtro nenhum aplicado — usado só pro selo de limite de
+   * WIP, pra um filtro ativo não fazer a fase parecer "dentro do limite" por engano. Sem
+   * filtro ativo, é igual a cards.length. */
+  totalCount?: number;
   canEdit: boolean;
   canMoveLeft: boolean;
   canMoveRight: boolean;
@@ -37,7 +42,9 @@ export default function KanbanColumn({
     localStorage.setItem(storageKey, collapsed ? '1' : '0');
   }, [collapsed, storageKey]);
 
-  const overLimit = phase.wip_limit != null && cards.length > phase.wip_limit;
+  const realCount = totalCount ?? cards.length;
+  const isFiltered = realCount !== cards.length;
+  const overLimit = phase.wip_limit != null && realCount > phase.wip_limit;
   const pillColor = phase.color ?? DEFAULT_PHASE_COLOR;
   const pillTextColor = getContrastTextColor(pillColor);
 
@@ -76,11 +83,11 @@ export default function KanbanColumn({
             {phase.wip_limit != null ? (
               <Tooltip label={overLimit ? `Limite de ${phase.wip_limit} cards excedido` : `Limite: ${phase.wip_limit} cards`}>
                 <span className={`kanban-column-count ${overLimit ? 'kanban-column-count-over' : ''}`}>
-                  {cards.length}/{phase.wip_limit}
+                  {isFiltered ? `${cards.length} de ${realCount}` : `${realCount}/${phase.wip_limit}`}
                 </span>
               </Tooltip>
             ) : (
-              <span className="kanban-column-count">{cards.length}</span>
+              <span className="kanban-column-count">{isFiltered ? `${cards.length} de ${realCount}` : realCount}</span>
             )}
           </span>
         </div>
