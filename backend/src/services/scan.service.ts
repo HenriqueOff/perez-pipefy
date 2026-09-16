@@ -10,10 +10,11 @@ export const SCAN_ADVISORY_LOCK_KEY = 4820573;
 /**
  * Roda os dois scans periódicos do sistema (SLA das fases + automações recorrentes).
  *
- * LIMITAÇÃO CONHECIDA: hoje isto é disparado por um setInterval dentro do processo do
- * backend (server.ts). Num backend que dorme (plano free do Render) o intervalo pode
- * nunca completar; o certo em produção séria é um cron/worker externo batendo em
- * POST /api/v1/internal/run-scans (ver internal.routes.ts e DEPLOY.md).
+ * Disparado por um setInterval dentro do processo do backend (server.ts), o que já é
+ * suficiente no deploy intranet (container sempre ligado). Alternativa disponível para
+ * um host que hiberna o processo: BACKGROUND_SCANS=off desliga o setInterval e um
+ * cron/worker externo passa a bater em POST /api/v1/internal/run-scans (ver
+ * internal.routes.ts) para disparar os scans.
  *
  * Enquanto o disparo continua in-process, um advisory lock do Postgres garante que, com
  * 2+ instâncias, só uma roda o scan por vez — as automações recorrentes já são

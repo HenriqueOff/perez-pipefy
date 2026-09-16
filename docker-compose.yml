@@ -42,11 +42,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-pipelines}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pipelines}
       DATABASE_SSL: "false"
-      # Anexos em disco local (volume abaixo) — sem depender do Supabase, que só
-      # faz sentido pro deploy em nuvem descrito em DEPLOY.md.
-      STORAGE_DRIVER: local
       CORS_ORIGIN: http://192.168.0.169:3008
-      COOKIE_CROSS_SITE: "false"
       BACKGROUND_SCANS: interval
     volumes:
       - ./backend/uploads:/app/backend/uploads

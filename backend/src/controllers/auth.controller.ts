@@ -6,13 +6,13 @@ import { AppError } from '../utils/AppError';
 
 const REFRESH_COOKIE = 'refreshToken';
 
-// 'none' exige 'secure: true' (só é enviado em HTTPS) — combinação necessária quando
-// front e back estão em domínios diferentes (Render). Em dev local, 'lax' + sem secure
-// funciona pois tudo passa pelo mesmo domínio via proxy do Vite.
+// Deploy intranet: front e back sempre no mesmo domínio, servidos em HTTP puro (sem
+// TLS na LAN) — 'secure: true' faria o navegador descartar o cookie (Secure exige
+// HTTPS), por isso fica fixo em false aqui, independente de NODE_ENV.
 const cookieOptions = {
   httpOnly: true,
-  secure: env.cookieCrossSite || env.nodeEnv === 'production',
-  sameSite: (env.cookieCrossSite ? 'none' : 'lax') as 'none' | 'lax',
+  secure: false,
+  sameSite: 'lax' as const,
   path: '/api/v1/auth',
 };
 
