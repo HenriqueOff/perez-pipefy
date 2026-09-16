@@ -48,6 +48,8 @@ const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   database_link: 'Conexão com database',
   photo_gallery: 'Galeria de fotos',
   phone: 'Telefone (WhatsApp)',
+  currency: 'Moeda (R$)',
+  cpf_cnpj: 'CPF/CNPJ',
 };
 
 const FORMULA_HELP = 'Use as keys dos campos do pipeline como variáveis. Operadores: + - * / %. Funções: ROUND(x, casas), MIN(a, b), MAX(a, b), ABS(x).';

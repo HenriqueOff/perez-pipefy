@@ -1412,6 +1412,21 @@ textarea:focus {
   border-color: #25d366;
 }
 
+.currency-field-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.currency-field-row .currency-prefix {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.currency-field-row input {
+  flex: 1;
+}
+
 .required {
   color: var(--color-danger);
   margin-left: 4px;

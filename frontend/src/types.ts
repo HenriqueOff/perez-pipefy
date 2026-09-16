@@ -10,8 +10,18 @@ export type CustomFieldType =
   | 'formula'
   | 'database_link'
   | 'photo_gallery'
-  | 'phone';
-export type DatabaseFieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+  | 'phone'
+  | 'currency'
+  | 'cpf_cnpj';
+export type DatabaseFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'boolean'
+  | 'select'
+  | 'currency'
+  | 'cpf_cnpj';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -250,6 +260,7 @@ export interface Card {
   position: number;
   due_date: string | null;
   current_phase_since: string;
+  sla_override_hours: number | null;
   fieldValues: CardFieldValue[];
   labels: Label[];
   assignees: CardAssignee[];

@@ -14,7 +14,9 @@ export type CustomFieldType =
   | 'formula'
   | 'database_link'
   | 'photo_gallery'
-  | 'phone';
+  | 'phone'
+  | 'currency'
+  | 'cpf_cnpj';
 
 export type CardHistoryEventType =
   | 'created'

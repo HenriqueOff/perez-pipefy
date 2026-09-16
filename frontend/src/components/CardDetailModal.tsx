@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PipelinesApi } from '../api/pipelines';
 import { openHtmlDocument } from '../utils/openHtmlDocument';
 import { buildWhatsAppLink } from '../utils/whatsapp';
+import { maskCpfCnpj } from '../utils/documentFormat';
 import { DatabasesApi } from '../api/databases';
 import { CustomField, Phase, PipelineMember, PipelineRole } from '../types';
 import { useToast } from '../context/ToastContext';
@@ -360,6 +361,29 @@ function FieldInput({
           onChange={(e) => setLocal(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={() => onCommit(local === '' ? null : Number(local))}
           disabled={disabled}
+        />
+      )}
+      {field.type === 'currency' && (
+        <div className="currency-field-row">
+          <span className="currency-prefix">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            value={local === '' ? '' : Number(local)}
+            onChange={(e) => setLocal(e.target.value === '' ? '' : Number(e.target.value))}
+            onBlur={() => onCommit(local === '' ? null : Number(local))}
+            disabled={disabled}
+          />
+        </div>
+      )}
+      {field.type === 'cpf_cnpj' && (
+        <input
+          value={String(local ?? '')}
+          onChange={(e) => setLocal(maskCpfCnpj(e.target.value))}
+          onBlur={() => onCommit(local)}
+          disabled={disabled}
+          placeholder="CPF ou CNPJ"
+          inputMode="numeric"
         />
       )}
       {field.type === 'date' && (

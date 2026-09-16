@@ -11,6 +11,8 @@ const TYPE_LABELS: Record<DatabaseFieldType, string> = {
   date: 'Data',
   boolean: 'Sim/Não',
   select: 'Lista de opções',
+  currency: 'Moeda (R$)',
+  cpf_cnpj: 'CPF/CNPJ',
 };
 
 const DIACRITICS_PATTERN = new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, 'g');

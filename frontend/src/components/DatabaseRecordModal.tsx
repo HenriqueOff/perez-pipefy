@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DatabasesApi } from '../api/databases';
 import { DatabaseField, DatabaseRecord } from '../types';
+import { maskCpfCnpj } from '../utils/documentFormat';
 import Icon from './Icon';
 
 function FieldInput({
@@ -44,6 +45,29 @@ function FieldInput({
           onChange={(e) => setLocal(e.target.value === '' ? '' : Number(e.target.value))}
           onBlur={() => onCommit(local === '' ? null : Number(local))}
           disabled={disabled}
+        />
+      )}
+      {field.type === 'currency' && (
+        <div className="currency-field-row">
+          <span className="currency-prefix">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            value={local === '' ? '' : Number(local)}
+            onChange={(e) => setLocal(e.target.value === '' ? '' : Number(e.target.value))}
+            onBlur={() => onCommit(local === '' ? null : Number(local))}
+            disabled={disabled}
+          />
+        </div>
+      )}
+      {field.type === 'cpf_cnpj' && (
+        <input
+          value={String(local ?? '')}
+          onChange={(e) => setLocal(maskCpfCnpj(e.target.value))}
+          onBlur={() => onCommit(local)}
+          disabled={disabled}
+          placeholder="CPF ou CNPJ"
+          inputMode="numeric"
         />
       )}
       {field.type === 'date' && (

@@ -67,6 +67,8 @@ export const createCustomFieldSchema = z.object({
     'database_link',
     'photo_gallery',
     'phone',
+    'currency',
+    'cpf_cnpj',
   ]),
   options: z.array(z.string()).optional(),
   formula: z.string().min(1).max(500).optional(),

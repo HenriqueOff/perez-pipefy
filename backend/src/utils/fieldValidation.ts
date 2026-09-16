@@ -1,4 +1,5 @@
 import { AppError } from './AppError';
+import { isValidCpfOrCnpj } from './documentValidation';
 
 // Estrutura mínima compartilhada por CustomFieldRow (campo de fase de pipeline) e
 // DatabaseFieldRow (campo de database) — ambos reaproveitam esta mesma validação.
@@ -27,8 +28,14 @@ export function validateFieldValue(field: FieldLike, value: unknown): void {
       }
       break;
     case 'number':
+    case 'currency':
       if (typeof value !== 'number' || Number.isNaN(value)) {
         throw new AppError(`O campo "${field.label}" deve ser numérico`, 422);
+      }
+      break;
+    case 'cpf_cnpj':
+      if (typeof value !== 'string' || !isValidCpfOrCnpj(value)) {
+        throw new AppError(`O campo "${field.label}" deve ser um CPF ou CNPJ válido`, 422);
       }
       break;
     case 'boolean':

@@ -27,7 +27,7 @@ export const createDatabaseFieldSchema = z.object({
     .min(1)
     .max(100)
     .regex(/^[a-z0-9_]+$/, 'key deve conter apenas letras minúsculas, números e underscore'),
-  type: z.enum(['text', 'textarea', 'number', 'date', 'boolean', 'select']),
+  type: z.enum(['text', 'textarea', 'number', 'date', 'boolean', 'select', 'currency', 'cpf_cnpj']),
   options: z.array(z.string()).optional(),
   required: z.boolean().optional(),
   position: z.number().int().min(0).optional(),
