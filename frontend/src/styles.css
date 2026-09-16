@@ -2383,6 +2383,48 @@ button svg {
   margin-bottom: 10px;
 }
 
+.multiselect-filter {
+  position: relative;
+}
+
+.multiselect-filter-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.multiselect-filter-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.multiselect-filter-option {
+  padding: 4px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.multiselect-filter-option:hover {
+  background: var(--color-surface-2);
+}
+
+.multiselect-filter-clear {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
 .table-filters-bar select {
   font-size: 13px;
 }

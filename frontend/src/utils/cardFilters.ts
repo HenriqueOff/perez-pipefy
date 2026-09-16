@@ -2,8 +2,11 @@ import { Card, Phase } from '../types';
 
 export interface CardFilters {
   phaseId: number | '';
-  labelId: number | '';
-  assigneeId: number | '';
+  // Array, não valor único: lógica "OU" entre os marcados, igual ao filtro de
+  // etiqueta/responsável do Pipefy (marcar 2 etiquetas mostra card com qualquer uma
+  // das duas, não as duas ao mesmo tempo).
+  labelIds: number[];
+  assigneeIds: number[];
   overdueOnly: boolean;
   slaBreachedOnly: boolean;
   text: string;
@@ -11,8 +14,8 @@ export interface CardFilters {
 
 export const EMPTY_CARD_FILTERS: CardFilters = {
   phaseId: '',
-  labelId: '',
-  assigneeId: '',
+  labelIds: [],
+  assigneeIds: [],
   overdueOnly: false,
   slaBreachedOnly: false,
   text: '',
@@ -21,8 +24,8 @@ export const EMPTY_CARD_FILTERS: CardFilters = {
 export function hasActiveCardFilters(filters: CardFilters): boolean {
   return (
     filters.phaseId !== '' ||
-    filters.labelId !== '' ||
-    filters.assigneeId !== '' ||
+    (filters.labelIds?.length ?? 0) > 0 ||
+    (filters.assigneeIds?.length ?? 0) > 0 ||
     filters.overdueOnly ||
     filters.slaBreachedOnly ||
     filters.text.trim() !== ''
@@ -54,8 +57,10 @@ function fieldValueMatchesText(value: unknown, text: string): boolean {
 
 export function matchesCardFilters(card: Card, filters: CardFilters, phaseById: Map<number, Phase>): boolean {
   if (filters.phaseId !== '' && card.current_phase_id !== filters.phaseId) return false;
-  if (filters.labelId !== '' && !card.labels.some((l) => l.id === filters.labelId)) return false;
-  if (filters.assigneeId !== '' && !card.assignees.some((a) => a.user_id === filters.assigneeId)) return false;
+  const labelIds = filters.labelIds ?? [];
+  if (labelIds.length > 0 && !card.labels.some((l) => labelIds.includes(l.id))) return false;
+  const assigneeIds = filters.assigneeIds ?? [];
+  if (assigneeIds.length > 0 && !card.assignees.some((a) => assigneeIds.includes(a.user_id))) return false;
   if (filters.overdueOnly && !isOverdue(card)) return false;
   if (filters.slaBreachedOnly && !isSlaBreached(card, phaseById.get(card.current_phase_id))) return false;
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Label, Phase, PipelineMember } from '../types';
 import { CardFilters, EMPTY_CARD_FILTERS, hasActiveCardFilters } from '../utils/cardFilters';
 import { listSavedFilters, saveFilter, deleteFilter } from '../utils/savedFilters';
+import MultiSelectFilter from './MultiSelectFilter';
 
 export default function CardFilterBar({
   storageKey,
@@ -67,25 +68,18 @@ export default function CardFilterBar({
             ))}
           </select>
         )}
-        <select value={filters.labelId} onChange={(e) => onChange({ ...filters, labelId: e.target.value ? Number(e.target.value) : '' })}>
-          <option value="">Todas as etiquetas</option>
-          {labels?.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filters.assigneeId}
-          onChange={(e) => onChange({ ...filters, assigneeId: e.target.value ? Number(e.target.value) : '' })}
-        >
-          <option value="">Todos os responsáveis</option>
-          {members.map((m) => (
-            <option key={m.user_id} value={m.user_id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
+        <MultiSelectFilter
+          label="Etiquetas"
+          options={(labels ?? []).map((l) => ({ id: l.id, name: l.name }))}
+          selectedIds={filters.labelIds ?? []}
+          onChange={(labelIds) => onChange({ ...filters, labelIds })}
+        />
+        <MultiSelectFilter
+          label="Responsáveis"
+          options={members.map((m) => ({ id: m.user_id, name: m.name }))}
+          selectedIds={filters.assigneeIds ?? []}
+          onChange={(assigneeIds) => onChange({ ...filters, assigneeIds })}
+        />
         <label className="checkbox-label">
           <input
             type="checkbox"
