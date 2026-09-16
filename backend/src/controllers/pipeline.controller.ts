@@ -43,6 +43,11 @@ export const PipelineController = {
     res.json(await PipelineService.update(Number(req.params.pipelineId), req.body));
   },
 
+  async duplicate(req: Request, res: Response) {
+    const clone = await PipelineService.duplicate(Number(req.params.pipelineId), req.user!.id);
+    res.status(201).json(clone);
+  },
+
   async dashboard(req: Request, res: Response) {
     res.json(await DashboardService.getForPipeline(Number(req.params.pipelineId)));
   },

@@ -4,6 +4,7 @@ import { CardHistoryModel } from '../models/cardHistory.model';
 import { PipelineModel } from '../models/pipeline.model';
 import { PhaseModel } from '../models/phase.model';
 import { CustomFieldModel } from '../models/customField.model';
+import { LabelModel } from '../models/label.model';
 import { DatabaseModel } from '../models/database.model';
 import { UserModel } from '../models/user.model';
 import { PipelineRole } from '../types/enums';
@@ -178,6 +179,76 @@ export const PipelineService = {
     }
 
     return pipeline;
+  },
+
+  /**
+   * Clona fases (com SLA/WIP/permissões), campos customizados e etiquetas pra um
+   * pipeline novo. NÃO clona automações, conexões nem formulário público: os configs
+   * delas (trigger_config/action_config em jsonb) referenciam phase_id/label_id por id
+   * numérico, e remapear isso errado deixaria a automação clonada silenciosamente
+   * mexendo na fase/etiqueta errada — pior do que simplesmente não clonar. Quem duplicar
+   * um pipeline com automações configuradas precisa recriá-las na cópia.
+   */
+  async duplicate(pipelineId: number, userId: number) {
+    const source = await PipelineModel.findById(pipelineId);
+    if (!source) {
+      throw AppError.notFound('Pipeline não encontrado');
+    }
+
+    const [sourcePhases, sourceLabels] = await Promise.all([
+      PhaseModel.listByPipeline(pipelineId),
+      LabelModel.listByPipeline(pipelineId),
+    ]);
+
+    const clone = await PipelineModel.create({
+      name: `${source.name} (cópia)`,
+      description: source.description,
+      created_by: userId,
+    });
+    await PipelineModel.addMember(clone.id, userId, 'owner');
+
+    for (const phase of sourcePhases) {
+      const newPhase = await PhaseModel.create({
+        pipeline_id: clone.id,
+        name: phase.name,
+        position: phase.position,
+        color: phase.color,
+        is_initial: phase.is_initial,
+        is_final: phase.is_final,
+        sla_hours: phase.sla_hours,
+        wip_limit: phase.wip_limit,
+        min_move_in_role: phase.min_move_in_role,
+        min_move_out_role: phase.min_move_out_role,
+      });
+      if (!phase.allow_manual_card_creation) {
+        await PhaseModel.setAllowManualCardCreation(newPhase.id, false);
+      }
+
+      const sourceFields = await CustomFieldModel.listByPhase(phase.id);
+      for (const field of sourceFields) {
+        await CustomFieldModel.create({
+          phase_id: newPhase.id,
+          label: field.label,
+          key: field.key,
+          type: field.type,
+          options: field.options,
+          formula: field.formula,
+          min_view_role: field.min_view_role,
+          min_edit_role: field.min_edit_role,
+          required: field.required,
+          position: field.position,
+          // Fica apontando pro MESMO database — é um cadastro mestre compartilhado
+          // (ex.: Proprietários), não algo que faça sentido duplicar junto.
+          linked_database_id: field.linked_database_id,
+        });
+      }
+    }
+
+    for (const label of sourceLabels) {
+      await LabelModel.create({ pipeline_id: clone.id, name: label.name, color: label.color });
+    }
+
+    return clone;
   },
 
   async update(pipelineId: number, changes: { name?: string; description?: string | null; archived?: boolean }) {

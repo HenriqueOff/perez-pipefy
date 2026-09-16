@@ -4,6 +4,7 @@ import {
   AuditLogEntry,
   Automation,
   AutomationActionType,
+  AutomationRun,
   AutomationTriggerType,
   Card,
   CardAssignee,
@@ -43,6 +44,7 @@ export const PipelinesApi = {
     api.post<Pipeline>('/pipelines', input).then((r) => r.data),
   update: (id: number, changes: { name?: string; description?: string | null; archived?: boolean }) =>
     api.patch<Pipeline>(`/pipelines/${id}`, changes).then((r) => r.data),
+  duplicate: (id: number) => api.post<Pipeline>(`/pipelines/${id}/duplicate`).then((r) => r.data),
 
   auditLog: (id: number, params?: { limit?: number; offset?: number }) =>
     api.get<AuditLogEntry[]>(`/pipelines/${id}/audit-log`, { params }).then((r) => r.data),
@@ -135,6 +137,9 @@ export const PipelinesApi = {
 
   listAutomations: (pipelineId: number) =>
     api.get<Automation[]>(`/pipelines/${pipelineId}/automations`).then((r) => r.data),
+
+  listAutomationRuns: (pipelineId: number) =>
+    api.get<AutomationRun[]>(`/pipelines/${pipelineId}/automations/runs`).then((r) => r.data),
 
   createAutomation: (
     pipelineId: number,

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { PipelinesApi } from '../api/pipelines';
 import { AuditLogEntry, Pipeline } from '../types';
 import Icon from './Icon';
@@ -53,10 +54,12 @@ interface Props {
 
 export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClose }: Props) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('settings');
   const [name, setName] = useState(pipeline.name);
   const [description, setDescription] = useState(pipeline.description ?? '');
   const [error, setError] = useState<string | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['pipeline', pipelineId] });
@@ -72,6 +75,20 @@ export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClo
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setError(message ?? 'Não foi possível salvar');
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: () => PipelinesApi.duplicate(pipelineId),
+    onSuccess: (clone) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] });
+      queryClient.invalidateQueries({ queryKey: ['pipelines-overview'] });
+      onClose();
+      navigate(`/pipelines/${clone.id}`);
+    },
+    onError: (err: unknown) => {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setDuplicateError(message ?? 'Não foi possível duplicar o pipeline');
     },
   });
 
@@ -156,6 +173,22 @@ export default function PipelineAdminSettingsModal({ pipelineId, pipeline, onClo
                   </button>
                 </div>
               </form>
+
+              <hr className="div" />
+
+              <div className="admin-only-setting">
+                <strong>Duplicar pipeline</strong>
+                <p className="muted">
+                  Cria um pipeline novo com as mesmas fases (SLA, limite de WIP, permissões de mover), campos
+                  customizados e etiquetas. Automações, conexões e o formulário público não são copiados — precisam
+                  ser recriados na cópia, se for o caso.
+                </p>
+                {duplicateError && <p className="error">{duplicateError}</p>}
+                <button type="button" className="secondary-button" onClick={() => duplicateMutation.mutate()} disabled={duplicateMutation.isPending}>
+                  {duplicateMutation.isPending && <span className="button-spinner" aria-hidden="true" />}
+                  Duplicar pipeline
+                </button>
+              </div>
 
               <hr className="div" />
 

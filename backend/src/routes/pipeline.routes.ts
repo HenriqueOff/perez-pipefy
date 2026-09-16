@@ -36,6 +36,8 @@ router.patch(
   asyncHandler(PipelineController.update)
 );
 
+router.post('/:pipelineId/duplicate', requirePipelineRole('manager'), asyncHandler(PipelineController.duplicate));
+
 router.get('/:pipelineId/dashboard', requirePipelineRole('viewer'), asyncHandler(PipelineController.dashboard));
 
 // Painel da engrenagem no board — admin geral, não basta ser owner/manager do pipeline
